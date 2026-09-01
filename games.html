@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dase/games — free games tracker</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F5F6FA;
+    --panel: #FFFFFF;
+    --card: #FFFFFF;
+    --sidebar: #FFFFFF;
+    --text: #14161C;
+    --muted: #767C8C;
+    --accent: #2F5EFF;
+    --accent-dim: rgba(47, 94, 255, 0.12);
+    --accent2: #FF5A3C;
+    --line: #E7E8EF;
+    --bar: #E2E5F5;
+    --green: #2eaf63;
+    --yellow: #d99100;
+    --red: #e04848;
+    --mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Consolas, monospace;
+  }
+  [data-theme="dark"] {
+    --bg: #0E0F14;
+    --panel: #14161D;
+    --card: #181A22;
+    --sidebar: #12131A;
+    --text: #F4F5F9;
+    --muted: #8B8FA3;
+    --line: #262834;
+    --bar: #21232D;
+    --accent-dim: rgba(47, 94, 255, 0.25);
+    --green: #3ecf7e;
+    --yellow: #e8b34c;
+    --red: #ea6462;
+  }
+
+  body {
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    transition: background .25s, color .25s;
+  }
+
+  /* ===== Sidebar ===== */
+  .sidebar {
+    width: 240px;
+    background: var(--sidebar);
+    border-right: 1px solid var(--line);
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    flex-shrink: 0;
+  }
+  .brand { font-size: 21px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 24px; }
+  .brand span { color: var(--accent); }
+  .brand a { text-decoration: none; color: inherit; }
+
+  .side-controls { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+
+  .btn {
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    padding: 10px 14px; border-radius: 10px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    border: 1px solid var(--line); background: var(--card); color: var(--text);
+    transition: all .2s ease;
+  }
+  .btn-primary { background: var(--accent); color: #fff; border: none; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-danger { color: var(--red); }
+  .btn-danger:hover { background: rgba(224, 72, 72, 0.08); border-color: var(--red); }
+  .btn:hover:not(.btn-primary):not(.btn-danger) { background: var(--bar); }
+  .btn.spinning svg { animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toggle-box {
+    margin-top: auto; padding-top: 16px; border-top: 1px solid var(--line);
+    font-size: 12px; color: var(--muted); display: flex; flex-direction: column; gap: 8px;
+  }
+  .toggle-box label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500; }
+  .toggle-box input { accent-color: var(--accent); }
+
+  .user-box {
+    display: flex; align-items: center; gap: 10px;
+    padding-top: 16px; margin-top: 12px; border-top: 1px solid var(--line);
+  }
+  .theme-pill-switch {
+    display: flex; align-items: center; background: var(--card);
+    border: 1px solid var(--line); border-radius: 20px; padding: 3px;
+    flex: 1; justify-content: space-between;
+  }
+  .theme-pill-btn {
+    flex: 1; border: none; background: transparent; color: var(--muted);
+    padding: 6px 0; border-radius: 16px; cursor: pointer;
+    font-size: 13px; display: flex; align-items: center; justify-content: center;
+    transition: all .2s ease;
+  }
+  .theme-pill-btn.active {
+    background: var(--sidebar); color: var(--text);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08); font-weight: 700;
+  }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--card); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; text-decoration: none; color: var(--text);
+    font-size: 14px; font-weight: 700; transition: background .2s;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover { background: var(--bar); }
+
+  /* ===== Main Content ===== */
+  .main { flex: 1; padding: 32px 40px 60px; max-width: 1100px; margin: 0 auto; width: 100%; }
+
+  /* Stat Grid */
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .card { background: var(--card); border-radius: 14px; padding: 18px 20px; border: 1px solid var(--line); }
+  .card .lbl { font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 8px; }
+  .card .val { font-size: 26px; font-weight: 800; font-family: var(--mono); }
+
+  /* Chips / Filters */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .chip {
+    font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 20px;
+    border: 1px solid var(--line); background: var(--card); color: var(--muted);
+    cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px; transition: all .15s ease;
+  }
+  .chip .led { width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .5; }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chip.active .led { opacity: 1; background: #fff; }
+  .chip:hover:not(.active) { background: var(--bar); color: var(--text); }
+
+  /* Panel / Table */
+  .panel-box { background: var(--card); border-radius: 16px; border: 1px solid var(--line); padding: 22px 24px; overflow: hidden; }
+  .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+  .panel-head h2 { font-size: 16px; font-weight: 700; }
+  
+  .panel-controls { display: flex; align-items: center; gap: 12px; }
+  .panel-head .hint { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+
+  .select-custom {
+    font-family: inherit; font-size: 12.5px; font-weight: 600;
+    padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--bg); color: var(--text); cursor: pointer;
+    outline: none; transition: border-color .2s;
+  }
+  .select-custom:focus { border-color: var(--accent); }
+
+  .table-responsive { width: 100%; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; }
+  th {
+    font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .05em; padding: 12px 14px; border-bottom: 1px solid var(--line);
+  }
+  td { padding: 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  
+  td.proto { font-family: var(--mono); font-size: 12px; font-weight: 700; }
+  .game-cell { display: flex; align-items: center; gap: 12px; }
+  .game-cell img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: var(--bar); flex-shrink: 0; }
+  .game-title { font-weight: 600; color: var(--text); }
+  .game-title a { color: inherit; text-decoration: none; }
+  .game-title a:hover { color: var(--accent); text-decoration: underline; }
+  
+  .new-badge {
+    display: inline-block; margin-left: 8px; font-family: var(--mono); font-size: 10px;
+    text-transform: uppercase; color: #fff; background: var(--green); padding: 2px 7px;
+    border-radius: 12px; font-weight: 700; vertical-align: middle;
+  }
+  
+  td.date-cell { font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+  .ttl { font-family: var(--mono); font-size: 13px; font-weight: 600; }
+  .ttl.soon { color: var(--yellow); }
+  .ttl.perm { color: var(--muted); }
+  .ttl.off { color: var(--red); }
+
+  .empty-row td { padding: 32px 14px; text-align: center; color: var(--muted); font-weight: 500; }
+  .error-banner {
+    margin-bottom: 16px; padding: 12px 16px; border-radius: 10px;
+    background: rgba(224, 72, 72, 0.1); border: 1px solid var(--red);
+    color: var(--red); font-size: 13px; font-weight: 500;
+  }
+
+  footer { margin-top: 32px; font-size: 12px; color: var(--muted); text-align: center; }
+
+  @media (max-width: 900px) {
+    body { flex-direction: column; }
+    .sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--line); padding: 20px; }
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .main { padding: 24px; }
+    thead th:nth-child(3), td.date-cell.since { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="brand">
+    <a href="https://donodaseves.github.io/freegames/" target="_blank" rel="noopener">dase<span>/games</span></a>
+  </div>
+
+  <div class="side-controls">
+    <button class="btn btn-primary" id="refreshBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v6h-6"/></svg>
+      Sync
+    </button>
+    <button class="btn" id="clearNewBtn" title="Mark all as seen">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+      Clear "New"
+    </button>
+    <button class="btn btn-danger" id="resetStorageBtn" title="Reset all saved data">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      Reset Data
+    </button>
+  </div>
+
+  <div class="toggle-box">
+    <label>
+      <input type="checkbox" id="notifyToggle">
+      Notify on new games
+    </label>
+    <span id="notifyStatus" style="font-size: 11px;"></span>
+  </div>
+
+  <div class="user-box">
+    <div class="theme-pill-switch">
+      <button class="theme-pill-btn active" id="btnLight" onclick="setTheme('light')" aria-label="Light Mode">☀</button>
+      <button class="theme-pill-btn" id="btnDark" onclick="setTheme('dark')" aria-label="Dark Mode">☾</button>
+    </div>
+    <a href="https://donodaseves.github.io/dase/" class="icon-btn" title="Go to dase">D</a>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="grid">
+    <div class="card">
+      <div class="lbl">Active Now</div>
+      <div class="val" id="statActive">–</div>
+    </div>
+    <div class="card">
+      <div class="lbl">Ending Soon (≤3d)</div>
+      <div class="val" id="statSoon" style="color: var(--yellow);">–</div>
+    </div>
+    <div class="card">
+      <div class="lbl">No Deadline</div>
+      <div class="val" id="statPerm">–</div>
+    </div>
+    <div class="card">
+      <div class="lbl">Last Sync</div>
+      <div class="val" id="statUpdated" style="font-size: 20px;">–</div>
+    </div>
+  </div>
+
+  <div id="errorBanner"></div>
+
+  <div class="chips" id="chips"></div>
+
+  <div class="panel-box">
+    <div class="panel-head">
+      <h2>Games List</h2>
+      <div class="panel-controls">
+        <select id="sortSelect" class="select-custom">
+          <option value="expires">Sort by: Expiry Date</option>
+          <option value="title">Sort by: Title (A-Z)</option>
+          <option value="published">Sort by: Published Date</option>
+        </select>
+        <span class="hint" id="liveCount">0 items</span>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 15%;">Platform</th>
+            <th>Game</th>
+            <th style="width: 20%;" class="since-col">Since</th>
+            <th style="width: 20%;">Time Left</th>
+          </tr>
+        </thead>
+        <tbody id="liveBody">
+          <tr class="empty-row"><td colspan="4">Connecting to gamerpower.com …</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>Personal project, built with AI assistance. No support or bug fixes provided.</footer>
+</div>
+
+<script>
+function setTheme(mode) {
+  const root = document.documentElement;
+  root.setAttribute('data-theme', mode === 'dark' ? 'dark' : 'light');
+  document.getElementById('btnLight').classList.toggle('active', mode === 'light');
+  document.getElementById('btnDark').classList.toggle('active', mode === 'dark');
+}
+
+(function(){
+  "use strict";
+
+  var PLATFORMS = [
+    { key:"steam",  api:"steam",              label:"steam",  color:"#66c0f4" },
+    { key:"epic",   api:"epic-games-store",   label:"epic",   color:"#a0a0a0" },
+    { key:"gog",    api:"gog",                label:"gog",    color:"#a06fdb" },
+    { key:"ps4",    api:"ps4",                label:"ps4",    color:"#2F5EFF" },
+    { key:"ps5",    api:"ps5",                label:"ps5",    color:"#2F5EFF" },
+    { key:"itchio", api:"itchio",             label:"itch",   color:"#fa5c5c" }
+  ];
+
+  var CACHE_KEY = "fgw_cache_v2";
+  var CACHE_TTL_MS = 15 * 60 * 1000;
+  var SEEN_KEY = "fgw_seen_v1";
+  var NOTIFY_KEY = "fgw_notify_v1";
+
+  var state = {
+    live: [],
+    activePlatforms: PLATFORMS.map(function(p){ return p.key; }),
+    lastSync: null,
+    sortBy: "expires",
+    notifyEnabled: localStorage.getItem(NOTIFY_KEY) === "1"
+  };
+
+  function $(id){ return document.getElementById(id); }
+  function pad(n){ return n < 10 ? "0"+n : ""+n; }
+  function fmtDate(d){
+    if(!d) return "—";
+    return pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear();
+  }
+  function parseDate(str){
+    if(!str) return null;
+    var s = String(str).trim();
+    if(!s || s.toUpperCase() === "N/A") return null;
+    var d = new Date(s.length <= 10 ? s + "T00:00:00" : s);
+    if(isNaN(d.getTime())) return null;
+    return d;
+  }
+  function daysBetween(a, b){
+    var MS = 24*60*60*1000;
+    return Math.round((b.setHours(0,0,0,0) - a.setHours(0,0,0,0)) / MS);
+  }
+  function ttlInfo(endDate){
+    if(!endDate) return { label:"no deadline", cls:"perm", days:Infinity };
+    var today = new Date();
+    var days = daysBetween(new Date(today), new Date(endDate));
+    if(days < 0) return { label:"expired", cls:"off", days: days };
+    if(days === 0) return { label:"ends today", cls:"soon", days: 0 };
+    if(days <= 3) return { label: days + "d left", cls:"soon", days: days };
+    return { label: days + "d left", cls:"on", days: days };
+  }
+  function escapeHtml(s){
+    return String(s || "").replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function cleanTitle(title){
+    var t = String(title || "");
+    var patterns = [
+      /\s*giveaway\s*$/i,
+      /\s*\((steam|epic games( store)?|gog|playstation\s*4|playstation\s*5|ps4|ps5|itch\.io|itch|ubisoft|ea|origin|indie ?gala|microsoft store)\)\s*$/i
+    ];
+    var changed = true;
+    while(changed){
+      changed = false;
+      patterns.forEach(function(re){
+        var next = t.replace(re, "");
+        if(next !== t){ t = next; changed = true; }
+      });
+    }
+    return t.trim();
+  }
+
+  function loadSeenMap(){
+    try{
+      var raw = localStorage.getItem(SEEN_KEY);
+      return raw ? JSON.parse(raw) : {};
+    }catch(e){ return {}; }
+  }
+  function saveSeenMap(map){
+    try{ localStorage.setItem(SEEN_KEY, JSON.stringify(map)); }catch(e){}
+  }
+  function pruneSeenMap(seenMap, currentIds){
+    var next = {};
+    currentIds.forEach(function(cid){ if(seenMap[cid]) next[cid] = seenMap[cid]; });
+    return next;
+  }
+
+  function renderChips(){
+    var wrap = $("chips");
+    wrap.innerHTML = "";
+    PLATFORMS.forEach(function(p){
+      var active = state.activePlatforms.indexOf(p.key) > -1;
+      var chip = document.createElement("div");
+      chip.className = "chip" + (active ? " active" : "");
+      chip.innerHTML = '<span class="led" style="color:'+p.color+'"></span>' + p.label;
+      chip.addEventListener("click", function(){
+        var idx = state.activePlatforms.indexOf(p.key);
+        if(idx > -1) state.activePlatforms.splice(idx,1);
+        else state.activePlatforms.push(p.key);
+        renderChips();
+        renderLive();
+      });
+      wrap.appendChild(chip);
+    });
+  }
+
+  function updateNotifyStatus(){
+    var el = $("notifyStatus");
+    if(!("Notification" in window)){ el.textContent = "Not supported in this browser"; return; }
+    if(Notification.permission === "denied"){ el.textContent = "Blocked in browser settings"; return; }
+    el.textContent = state.notifyEnabled ? "Enabled" : "Disabled";
+  }
+  function initNotifyToggle(){
+    var toggle = $("notifyToggle");
+    toggle.checked = state.notifyEnabled;
+    updateNotifyStatus();
+    toggle.addEventListener("change", function(){
+      if(!toggle.checked){
+        state.notifyEnabled = false;
+        localStorage.setItem(NOTIFY_KEY, "0");
+        updateNotifyStatus();
+        return;
+      }
+      if(!("Notification" in window)){
+        toggle.checked = false;
+        updateNotifyStatus();
+        return;
+      }
+      if(Notification.permission === "granted"){
+        state.notifyEnabled = true;
+        localStorage.setItem(NOTIFY_KEY, "1");
+        updateNotifyStatus();
+      } else if(Notification.permission === "denied"){
+        toggle.checked = false;
+        updateNotifyStatus();
+      } else {
+        Notification.requestPermission().then(function(perm){
+          if(perm === "granted"){
+            state.notifyEnabled = true;
+            localStorage.setItem(NOTIFY_KEY, "1");
+          } else {
+            toggle.checked = false;
+            state.notifyEnabled = false;
+          }
+          updateNotifyStatus();
+        });
+      }
+    });
+  }
+  function maybeNotify(newGames){
+    if(!state.notifyEnabled) return;
+    if(!("Notification" in window) || Notification.permission !== "granted") return;
+    if(!newGames.length) return;
+    var names = newGames.slice(0, 3).map(function(g){ return g.title; }).join(", ");
+    var body = newGames.length + (newGames.length === 1 ? " new game: " : " new games: ") + names + (newGames.length > 3 ? "…" : "");
+    try{
+      var n = new Notification("dase/games", {
+        body: body,
+        icon: "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>",
+        tag: "fgw-new"
+      });
+      n.onclick = function(){ window.focus(); n.close(); };
+    }catch(e){}
+  }
+
+  function fetchPlatform(p){
+    var url = "https://www.gamerpower.com/api/giveaways?platform=" + encodeURIComponent(p.api) + "&type=game";
+    return fetch(url).then(function(r){
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function(data){
+      if(!Array.isArray(data)) return [];
+      return data.map(function(g){
+        return {
+          id: g.id,
+          title: cleanTitle(g.title) || "Untitled",
+          image: g.thumbnail || g.image || "",
+          url: g.open_giveaway_url || g.gamerpower_url || "#",
+          entered: parseDate(g.published_date),
+          expires: parseDate(g.end_date),
+          platformKey: p.key,
+          platformLabel: p.label
+        };
+      });
+    }).catch(function(err){
+      console.warn("failed " + p.key, err);
+      return { __error: p.key };
+    });
+  }
+
+  function persistCache(){
+    try{
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        ts: state.lastSync.getTime(),
+        games: state.live.map(function(g){
+          return {
+            id:g.id, title:g.title, image:g.image, url:g.url, isNew:g.isNew,
+            entered: g.entered ? g.entered.toISOString() : null,
+            expires: g.expires ? g.expires.toISOString() : null,
+            platformKey:g.platformKey, platformLabel:g.platformLabel
+          };
+        })
+      }));
+    }catch(e){}
+  }
+
+  function loadLive(useCache){
+    if(useCache){
+      try{
+        var raw = localStorage.getItem(CACHE_KEY);
+        if(raw){
+          var cached = JSON.parse(raw);
+          if(cached.ts && (Date.now() - cached.ts) < CACHE_TTL_MS){
+            state.live = (cached.games||[]).map(function(g){
+              g.title = cleanTitle(g.title);
+              g.entered = g.entered ? new Date(g.entered) : null;
+              g.expires = g.expires ? new Date(g.expires) : null;
+              return g;
+            });
+            state.lastSync = new Date(cached.ts);
+            renderLive();
+            renderStats();
+            return Promise.resolve();
+          }
+        }
+      }catch(e){}
+    }
+    return doSync(false);
+  }
+
+  function clearAllNewTags(){
+    var seenMap = loadSeenMap();
+    state.live.forEach(function(g){
+      g.isNew = false;
+      seenMap["game:"+g.id] = Date.now();
+    });
+    seenMap = pruneSeenMap(seenMap, state.live.map(function(g){ return "game:"+g.id; }));
+    saveSeenMap(seenMap);
+    persistCache();
+    renderLive();
+  }
+
+  function doSync(forceSync){
+    var btn = $("refreshBtn");
+    btn.classList.add("spinning");
+    $("errorBanner").innerHTML = "";
+    var mainFetches = PLATFORMS.map(fetchPlatform);
+    return Promise.all(mainFetches).then(function(mainResults){
+      var games = [];
+      var failed = [];
+      var seenIds = {};
+      mainResults.forEach(function(r, i){
+        var label = PLATFORMS[i].label;
+        if(r && r.__error){ failed.push(label); return; }
+        (r||[]).forEach(function(g){
+          var key = String(g.id);
+          if(!seenIds[key]){ seenIds[key] = true; games.push(g); }
+        });
+      });
+
+      var seenMap = loadSeenMap();
+      var isFirstRun = Object.keys(seenMap).length === 0;
+
+      games.forEach(function(g){
+        g.isNew = !seenMap["game:"+g.id];
+      });
+
+      if(!isFirstRun){
+        maybeNotify(games.filter(function(g){ return g.isNew; }));
+      }
+
+      state.live = games;
+      state.lastSync = new Date();
+      persistCache();
+      if(failed.length){
+        $("errorBanner").innerHTML =
+          '<div class="error-banner">⚠ Couldn\'t sync: ' + failed.join(", ") +
+          ". Other data loaded fine.</div>";
+      }
+      renderLive();
+      renderStats();
+    }).catch(function(err){
+      $("errorBanner").innerHTML =
+        '<div class="error-banner">⚠ Couldn\'t reach gamerpower.com. Check your connection.</div>';
+    }).finally(function(){
+      btn.classList.remove("spinning");
+    });
+  }
+
+  function renderLive(){
+    var body = $("liveBody");
+    var rows = state.live.filter(function(g){
+      if(state.activePlatforms.indexOf(g.platformKey) === -1) return false;
+      var t = ttlInfo(g.expires);
+      if(t.cls === "off") return false;
+      return true;
+    });
+
+    rows.sort(function(a, b){
+      if(state.sortBy === "title"){
+        return a.title.localeCompare(b.title);
+      } else if(state.sortBy === "published"){
+        var da = a.entered ? a.entered.getTime() : 0;
+        var db = b.entered ? b.entered.getTime() : 0;
+        return db - da;
+      } else {
+        var ta = ttlInfo(a.expires).days;
+        var tb = ttlInfo(b.expires).days;
+        return ta - tb;
+      }
+    });
+
+    $("liveCount").textContent = rows.length + " items";
+    if(!rows.length){
+      body.innerHTML = '<tr class="empty-row"><td colspan="4">No results — adjust filters.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(function(g){
+      var t = ttlInfo(g.expires);
+      return '<tr>' +
+        '<td class="proto" style="color:' + platColor(g.platformKey) + '">' + g.platformLabel + '</td>' +
+        '<td><div class="game-cell">' +
+          (g.image ? '<img src="'+escapeHtml(g.image)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">' : '') +
+          '<div class="game-title"><a href="'+escapeHtml(g.url)+'" target="_blank" rel="noopener">'+escapeHtml(g.title)+'</a>' +
+          (g.isNew ? '<span class="new-badge">new</span>' : '') +
+          '</div>' +
+        '</div></td>' +
+        '<td class="date-cell since">' + (g.entered ? fmtDate(g.entered) : "—") + '</td>' +
+        '<td class="ttl ' + t.cls + '">' + t.label + '</td>' +
+      '</tr>';
+    }).join("");
+  }
+
+  function platColor(key){
+    var all = PLATFORMS;
+    var p = all.filter(function(x){ return x.key === key; })[0];
+    return p ? p.color : "#8b93a1";
+  }
+
+  function renderStats(){
+    var actives = state.live.filter(function(g){ return ttlInfo(g.expires).cls !== "off"; });
+    var soon = state.live.filter(function(g){ return ttlInfo(g.expires).cls === "soon"; });
+    var perm = state.live.filter(function(g){ return ttlInfo(g.expires).cls === "perm"; });
+    $("statActive").textContent = actives.length;
+    $("statSoon").textContent = soon.length;
+    $("statPerm").textContent = perm.length;
+    $("statUpdated").textContent = state.lastSync ? (pad(state.lastSync.getHours())+":"+pad(state.lastSync.getMinutes())) : "–";
+  }
+
+  $("refreshBtn").addEventListener("click", function(){ doSync(true); });
+  $("clearNewBtn").addEventListener("click", function(){ clearAllNewTags(); });
+
+  $("sortSelect").addEventListener("change", function(e){
+    state.sortBy = e.target.value;
+    renderLive();
+  });
+  
+  $("resetStorageBtn").addEventListener("click", function(){
+    if(confirm("Are you sure you want to reset all stored data (cache, notification settings, and seen games)?")){
+      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(SEEN_KEY);
+      localStorage.removeItem(NOTIFY_KEY);
+      state.notifyEnabled = false;
+      $("notifyToggle").checked = false;
+      updateNotifyStatus();
+      doSync(true);
+    }
+  });
+
+  renderChips();
+  initNotifyToggle();
+  loadLive(true);
+  setInterval(function(){ doSync(false); }, 30 * 60 * 1000);
+
+})();
+</script>
+</body>
+</html>
