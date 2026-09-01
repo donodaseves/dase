@@ -1,0 +1,1187 @@
+<!OCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>dase/ — Tools</title>
+  <link rel="canonical" href="https://donodaseves.github.io/daseutils/">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%B0%3C/text%3E%3C/svg%3E">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #F5F6FA;
+      --panel: #FFFFFF;
+      --card: #F5F6FA;
+      --sidebar: #FFFFFF;
+      --text: #14161C;
+      --muted: #767C8C;
+      --accent: #2F5EFF;
+      --accent2: #FF5A3C;
+      --line: #E7E8EF;
+      --bar: #E2E5F5;
+      --radius: 12px;
+      --mono: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0E0F14;
+      --panel: #14161D;
+      --card: #181A22;
+      --sidebar: #12131A;
+      --text: #F4F5F9;
+      --muted: #8B8FA3;
+      --line: #262834;
+      --bar: #21232D;
+    }
+
+    body {
+      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+      transition: background .25s, color .25s;
+    }
+
+    ::selection { background: var(--accent); color: #fff; }
+    a { color: var(--accent); }
+
+    /* ===== Mobile Topbar ===== */
+    .topbar-mobile {
+      display: none;
+      width: 100%;
+      background: var(--sidebar);
+      border-bottom: 1px solid var(--line);
+      padding: 14px 20px;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+    .topbar-mobile .brand { font-size: 20px; font-weight: 800; }
+    .topbar-mobile .brand span { color: var(--accent); }
+    .nav-toggle {
+      background: none; border: none; color: var(--text); font-size: 20px; cursor: pointer;
+    }
+
+    /* ===== Sidebar ===== */
+    .sidebar {
+      width: 240px;
+      background: var(--sidebar);
+      border-right: 1px solid var(--line);
+      padding: 28px 20px;
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+    .brand { font-size: 21px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 28px; }
+    .brand span { color: var(--accent); }
+    
+    .nav { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    
+    .category { margin-bottom: 6px; }
+    .category-label {
+      display: flex; align-items: center; justify-content: space-between; width: 100%;
+      text-align: left; background: none; border: none; cursor: pointer;
+      font-size: 11.5px; font-weight: 700; color: var(--muted); padding: 8px 10px;
+      letter-spacing: .05em; text-transform: uppercase; border-radius: 8px;
+    }
+    .category-label:hover { background: var(--card); color: var(--text); }
+    .category-label .chevron { font-size: 10px; transition: transform .2s ease; }
+    .category.expanded .category-label .chevron { transform: rotate(90deg); }
+    .category.expanded .category-label { color: var(--accent); }
+
+    .tool-link {
+      display: none;
+      align-items: center;
+      justify-content: flex-start;
+      text-align: left;
+      width: 100%;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 13.5px;
+      font-weight: 600;
+      padding: 8px 10px 8px 26px;
+      cursor: pointer;
+      border-radius: 8px;
+      margin-top: 2px;
+      transition: all .2s ease;
+    }
+    .category.expanded .tool-link { display: flex; }
+    .tool-link:hover { background: var(--card); color: var(--text); }
+    .tool-link.active { background: var(--accent); color: #ffffff; }
+
+    .sidebar-footer {
+      display: flex; flex-direction: column; gap: 10px;
+      padding-top: 16px; border-top: 1px solid var(--line); margin-top: auto;
+    }
+    
+    .reset-btn {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--card);
+      color: var(--muted);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all .2s ease;
+    }
+    .reset-btn:hover {
+      background: var(--accent2);
+      color: #ffffff;
+      border-color: var(--accent2);
+    }
+
+    .user-box { display: flex; align-items: center; gap: 10px; }
+    
+    .theme-pill-switch {
+      display: flex; align-items: center; background: var(--card);
+      border: 1px solid var(--line); border-radius: 20px; padding: 3px;
+      flex: 1; justify-content: space-between;
+    }
+    .theme-pill-btn {
+      flex: 1; border: none; background: transparent; color: var(--muted);
+      padding: 6px 0; border-radius: 16px; cursor: pointer;
+      font-size: 13px; display: flex; align-items: center; justify-content: center;
+      transition: all .2s ease;
+    }
+    .theme-pill-btn.active {
+      background: var(--sidebar); color: var(--text);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08); font-weight: 700;
+    }
+    
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--card); border: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; text-decoration: none; color: var(--text);
+      font-size: 14px; font-weight: 700; transition: background .2s;
+      flex-shrink: 0;
+    }
+    .icon-btn:hover { background: var(--bar); }
+
+    .sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 35; }
+
+    /* ===== Main Content Centralizado ===== */
+    .main {
+      flex: 1;
+      padding: 40px 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .panel {
+      display: none;
+      animation: fadeIn .2s ease-in-out;
+      width: 100%;
+    }
+    .panel.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .panel-head { margin-bottom: 24px; text-align: center; }
+    .panel-eyebrow { font-size: 12.5px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .panel-head h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.3px; }
+
+    /* Cards & Layout Clean */
+    .card { 
+      background: var(--panel); 
+      border-radius: 16px; 
+      border: 1px solid var(--line); 
+      padding: 24px; 
+      margin-bottom: 20px; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    }
+    .card h3 { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px; width: 100%; }
+    .card-grid .card { margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between; }
+    .io-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 14px; }
+
+    label { display: block; font-size: 12px; color: var(--muted); font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
+    input[type=text], input[type=number], select, textarea {
+      width: 100%; background: var(--card); border: 1px solid var(--line); color: var(--text);
+      border-radius: var(--radius); padding: 10px 14px; font-size: 14px; font-family: "Segoe UI", sans-serif;
+      outline: none; transition: border-color .2s, box-shadow .2s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47, 94, 255, 0.15); }
+    textarea { resize: vertical; min-height: 120px; font-family: var(--mono); font-size: 13px; }
+
+    .checkfield { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; user-select: none; }
+    .checkfield input { width: auto; cursor: pointer; }
+
+    /* Buttons & Actions */
+    button, .btn {
+      background: var(--accent); color: #ffffff; border: none;
+      font-weight: 700; font-size: 13px; padding: 10px 18px; border-radius: 20px; cursor: pointer;
+      transition: all .2s ease; display: inline-flex; align-items: center; justify-content: center;
+    }
+    button:hover { opacity: .9; transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    button.secondary { background: var(--card); color: var(--text); border: 1px solid var(--line); }
+    button.secondary:hover { background: var(--bar); }
+    button.small { padding: 6px 12px; font-size: 12px; border-radius: 12px; }
+
+    .action-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+    .output-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; align-items: center; border-top: 1px dashed var(--line); padding-top: 12px; }
+
+    .result {
+      font-family: var(--mono); font-size: 15px; font-weight: 600; background: var(--card);
+      border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px;
+      color: var(--accent); margin-top: 12px; word-break: break-word; min-height: 48px; display: flex; align-items: center;
+    }
+
+    footer.foot { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12.5px; text-align: center; width: 100%; }
+
+    /* Dynamic Components */
+    .dice-tray { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; justify-content: center; min-height: 60px; align-items: center; }
+    .die { width: 56px; height: 56px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-weight: 800; font-size: 22px; color: var(--accent); }
+    .die.rolling { animation: roll .35s ease; }
+    @keyframes roll { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.08); } 100% { transform: rotate(360deg) scale(1); } }
+    
+    .coin {
+      width: 90px; height: 90px; border-radius: 50%; margin: 16px auto 0;
+      background: linear-gradient(135deg, var(--accent), #6E8CFF);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 15px; color: #fff; box-shadow: 0 4px 12px rgba(47, 94, 255, 0.3);
+    }
+    .coin.flipping { animation: coinflip .5s ease; }
+    @keyframes coinflip { 0% { transform: rotateY(0); } 50% { transform: rotateY(360deg) scale(1.1); } 100% { transform: rotateY(720deg); } }
+    
+    .flip-history { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 14px; font-family: var(--mono); font-size: 12px; color: var(--muted); min-height: 28px; }
+    .flip-history span { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; font-weight: 700; }
+
+    .diff-output {
+      font-family: var(--mono); font-size: 13px; background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 12px 14px; margin-top: 14px; max-height: 360px; overflow: auto; white-space: pre-wrap;
+    }
+    .diff-line { padding: 2px 6px; border-radius: 4px; }
+    .diff-add { background: rgba(47, 94, 255, 0.15); color: var(--accent); }
+    .diff-del { background: rgba(255, 90, 60, 0.15); color: var(--accent2); text-decoration: line-through; }
+    .diff-same { color: var(--muted); }
+    .diff-legend { display: flex; gap: 14px; font-size: 12px; font-weight: 700; color: var(--muted); margin-top: 10px; justify-content: center; }
+    .diff-legend .add { color: var(--accent); }
+    .diff-legend .del { color: var(--accent2); }
+
+    /* Mobile */
+    @media (max-width: 900px) {
+      body { flex-direction: column; }
+      .topbar-mobile { display: flex; }
+      .sidebar {
+        position: fixed; top: 0; left: 0; height: 100vh; z-index: 36;
+        transform: translateX(-100%); transition: transform .25s ease;
+        box-shadow: 0 0 20px rgba(0,0,0,0.15);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-backdrop.open { display: block; }
+      .main { padding: 24px 16px 40px; min-height: auto; justify-content: flex-start; }
+      .io-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar-mobile">
+  <div class="brand">dase<span>/tools</span></div>
+  <button class="nav-toggle" id="navToggle" aria-label="Open Menu">☰</button>
+</div>
+
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="brand">dase<span>/</span></div>
+  <nav class="nav" id="navList"></nav>
+  
+  <div class="sidebar-footer">
+    <button class="reset-btn" onclick="resetLocalStorage()">↺ Reset Data</button>
+
+    <div class="user-box">
+      <div class="theme-pill-switch">
+        <button class="theme-pill-btn active" id="btnLight" onclick="setTheme('light')" aria-label="Light Mode">☀</button>
+        <button class="theme-pill-btn" id="btnDark" onclick="setTheme('dark')" aria-label="Dark Mode">☾</button>
+      </div>
+      <a href="https://donodaseves.github.io/dase/" class="icon-btn" title="Go to main site">D</a>
+    </div>
+  </div>
+</aside>
+
+<main class="main" id="main"></main>
+
+<script>
+function resetLocalStorage() {
+  if (confirm("Are you sure you want to reset all saved local data?")) {
+    try {
+      Object.keys(localStorage)
+        .filter(k => k.startsWith('daseutils.'))
+        .forEach(k => localStorage.removeItem(k));
+    } catch(e) {}
+    location.reload();
+  }
+}
+
+(() => {
+  "use strict";
+
+  /* =========================================================
+     STORAGE MANAGER
+  ========================================================= */
+  const STORE_PREFIX = 'daseutils.';
+
+  const store = {
+    set: (key, val) => { try { localStorage.setItem(STORE_PREFIX + key, val); } catch(e){} },
+    get: (key) => { try { return localStorage.getItem(STORE_PREFIX + key); } catch(e){ return null; } },
+    remove: (key) => { try { localStorage.removeItem(STORE_PREFIX + key); } catch(e){} }
+  };
+
+  const bindAutosave = (el, key) => {
+    if(!el) return;
+    const saved = store.get(key);
+    if(saved !== null) { el.value = saved; }
+    el.addEventListener('input', () => store.set(key, el.value));
+    if(saved !== null) { el.dispatchEvent(new Event('input')); }
+  };
+
+  const resetField = (el, key, defaultVal = '') => {
+    store.remove(key);
+    if(el) { el.value = defaultVal; el.dispatchEvent(new Event('input')); }
+  };
+
+  /* =========================================================
+     HELPERS
+  ========================================================= */
+  const fmt = n => isFinite(n) ? (Math.round(n * 10000) / 10000).toString() : '—';
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  
+  const getElText = el => el ? ('value' in el ? el.value : el.textContent) : '';
+  const copyText = text => navigator.clipboard?.writeText(text).catch(() => {});
+  const saveText = (text, filename = 'output.txt') => {
+    const blob = new Blob([text], {type: 'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  document.addEventListener('click', e => {
+    const copyBtn = e.target.closest('.copy-btn');
+    if(copyBtn) {
+      const target = document.getElementById(copyBtn.dataset.target);
+      copyText(getElText(target));
+      return;
+    }
+    const saveBtn = e.target.closest('.save-btn');
+    if(saveBtn) {
+      const target = document.getElementById(saveBtn.dataset.target);
+      saveText(getElText(target), saveBtn.dataset.filename);
+    }
+  });
+
+  const outputActions = (targetId, filename, extraBtn = '') => `
+    <div class="output-actions">
+      <button type="button" class="secondary small copy-btn" data-target="${targetId}">copy</button>
+      <button type="button" class="secondary small save-btn" data-target="${targetId}" data-filename="${filename}">save .txt</button>
+      ${extraBtn}
+    </div>
+  `;
+
+  /* =========================================================
+     CATEGORIES & TOOL REGISTRATION
+  ========================================================= */
+  const CATEGORIES = [
+    { id: 'calculators', label: 'calculators', icon: '🧮' },
+    { id: 'text',        label: 'text',        icon: '📝' },
+    { id: 'generators',  label: 'generators',  icon: '⚡' },
+    { id: 'fun',         label: 'fun',         icon: '🎲' }
+  ];
+
+  const TOOLS = [];
+  const registerTool = def => TOOLS.push(def);
+
+  /* =========================================================
+     TOOLS: CALCULATORS
+  ========================================================= */
+
+  registerTool({
+    id: 'percent', category: 'calculators', navLabel: 'percentage',
+    eyebrow: 'calculators · percentage', title: 'Percentage Calculator',
+    render: () => `
+      <div class="card-grid">
+        <div class="card">
+          <div>
+            <h3>What is X% of Y?</h3>
+            <div class="field-grid">
+              <div class="field"><label>X (%)</label><input type="number" id="p1x" placeholder="15"></div>
+              <div class="field"><label>Y</label><input type="number" id="p1y" placeholder="200"></div>
+            </div>
+            <div class="result" id="p1r">—</div>
+          </div>
+          ${outputActions('p1r', 'percentage-1.txt', '<button type="button" class="secondary small" id="p1Reset">clear</button>')}
+        </div>
+        <div class="card">
+          <div>
+            <h3>X is what % of Y?</h3>
+            <div class="field-grid">
+              <div class="field"><label>X</label><input type="number" id="p2x" placeholder="30"></div>
+              <div class="field"><label>Y</label><input type="number" id="p2y" placeholder="200"></div>
+            </div>
+            <div class="result" id="p2r">—</div>
+          </div>
+          ${outputActions('p2r', 'percentage-2.txt', '<button type="button" class="secondary small" id="p2Reset">clear</button>')}
+        </div>
+        <div class="card">
+          <div>
+            <h3>% change from X to Y</h3>
+            <div class="field-grid">
+              <div class="field"><label>X (initial)</label><input type="number" id="p3x" placeholder="80"></div>
+              <div class="field"><label>Y (final)</label><input type="number" id="p3y" placeholder="100"></div>
+            </div>
+            <div class="result" id="p3r">—</div>
+          </div>
+          ${outputActions('p3r', 'percentage-3.txt', '<button type="button" class="secondary small" id="p3Reset">clear</button>')}
+        </div>
+      </div>
+    `,
+    init: (panel) => {
+      const bindPercent = (xId, yId, rId, fn, resetId) => {
+        const x = panel.querySelector('#' + xId), y = panel.querySelector('#' + yId), r = panel.querySelector('#' + rId);
+        const calc = () => {
+          const xv = parseFloat(x.value), yv = parseFloat(y.value);
+          r.textContent = (isNaN(xv) || isNaN(yv)) ? '—' : fn(xv, yv);
+        };
+        x.addEventListener('input', calc);
+        y.addEventListener('input', calc);
+
+        panel.querySelector('#' + resetId).addEventListener('click', () => {
+          x.value = ''; y.value = ''; r.textContent = '—';
+        });
+      };
+
+      bindPercent('p1x', 'p1y', 'p1r', (x, y) => `${x}% of ${y} = ${fmt(x / 100 * y)}`, 'p1Reset');
+      bindPercent('p2x', 'p2y', 'p2r', (x, y) => y === 0 ? 'Y cannot be 0' : `${x} is ${fmt(x / y * 100)}% of ${y}`, 'p2Reset');
+      bindPercent('p3x', 'p3y', 'p3r', (x, y) => {
+        if (x === 0) return 'X cannot be 0';
+        const change = (y - x) / x * 100;
+        return `${change >= 0 ? '+' : ''}${fmt(change)}% (${change >= 0 ? 'increase' : 'decrease'})`;
+      }, 'p3Reset');
+    }
+  });
+
+  registerTool({
+    id: 'unitconv', category: 'calculators', navLabel: 'unit converter',
+    eyebrow: 'calculators · unit converter', title: 'Unit Converter',
+    render: () => `
+      <div class="card">
+        <div class="field-grid">
+          <div class="field">
+            <label>category</label>
+            <select id="ucCategory">
+              <option value="length">Length</option>
+              <option value="weight">Mass / Weight</option>
+              <option value="temperature">Temperature</option>
+            </select>
+          </div>
+          <div class="field"><label>value</label><input type="number" id="ucValue" value="1"></div>
+          <div class="field"><label>from</label><select id="ucFrom"></select></div>
+          <div class="field"><label>to</label><select id="ucTo"></select></div>
+        </div>
+        <div class="result" id="ucResult">—</div>
+        ${outputActions('ucResult', 'conversion.txt', '<button type="button" class="secondary small" id="ucReset">clear</button>')}
+      </div>
+    `,
+    init: (panel) => {
+      const units = {
+        length: { mm: 0.001, cm: 0.01, m: 1, km: 1000, in: 0.0254, ft: 0.3048, yd: 0.9144, mi: 1609.344 },
+        weight: { mg: 0.001, g: 1, kg: 1000, oz: 28.3495, lb: 453.592 },
+        temperature: { C: 1, F: 1, K: 1 }
+      };
+      
+      const catEl = panel.querySelector('#ucCategory'), fromEl = panel.querySelector('#ucFrom'),
+            toEl = panel.querySelector('#ucTo'), valEl = panel.querySelector('#ucValue'),
+            resEl = panel.querySelector('#ucResult');
+
+      const populate = () => {
+        const cat = catEl.value;
+        const options = Object.keys(units[cat]).map(u => `<option value="${u}">${u}</option>`).join('');
+        fromEl.innerHTML = options;
+        toEl.innerHTML = options;
+        if(toEl.options.length > 1) toEl.selectedIndex = 1;
+        calc();
+      };
+
+      const calc = () => {
+        const cat = catEl.value, v = parseFloat(valEl.value);
+        if(isNaN(v)) { resEl.textContent = '—'; return; }
+        const from = fromEl.value, to = toEl.value;
+        let res;
+
+        if(cat === 'temperature') {
+          let c = from === 'C' ? v : from === 'F' ? (v - 32) * 5/9 : v - 273.15;
+          res = to === 'C' ? c : to === 'F' ? c * 9/5 + 32 : c + 273.15;
+        } else {
+          res = (v * units[cat][from]) / units[cat][to];
+        }
+        resEl.textContent = `${v} ${from} = ${fmt(res)} ${to}`;
+      };
+
+      catEl.addEventListener('change', populate);
+      [valEl, fromEl, toEl].forEach(el => el.addEventListener('input', calc));
+      populate();
+
+      panel.querySelector('#ucReset').addEventListener('click', () => {
+        valEl.value = '1';
+        calc();
+      });
+    }
+  });
+
+  /* =========================================================
+     TOOLS: TEXT
+  ========================================================= */
+
+  registerTool({
+    id: 'diffchecker', category: 'text', navLabel: 'text diff',
+    eyebrow: 'text · text diff', title: 'Text Diff Checker',
+    render: () => `
+      <div class="card">
+        <div class="io-grid">
+          <div class="field"><label>text A (original)</label><textarea id="diffA" placeholder="Original…"></textarea></div>
+          <div class="field"><label>text B (modified)</label><textarea id="diffB" placeholder="Modified…"></textarea></div>
+        </div>
+        <div class="action-row">
+          <button type="button" id="diffBtn">compare</button>
+        </div>
+        <div class="diff-output" id="diffOutput">Run a comparison to see differences.</div>
+        <div class="diff-legend"><span class="add">■ added</span><span class="del">■ removed</span></div>
+        <textarea id="diffOutputText" style="display:none;"></textarea>
+        ${outputActions('diffOutputText', 'diff.txt', '<button type="button" class="secondary small" id="diffResetBtn">clear</button>')}
+      </div>
+    `,
+    init: (panel) => {
+      const diffA = panel.querySelector('#diffA'), diffB = panel.querySelector('#diffB'),
+            outEl = panel.querySelector('#diffOutput'), outText = panel.querySelector('#diffOutputText');
+
+      const tokenize = s => s.match(/\n|[^\S\n]+|\S+/g) || [];
+      
+      const computeDiff = (a, b) => {
+        const ta = tokenize(a), tb = tokenize(b);
+        const dp = Array.from({length: ta.length + 1}, () => new Array(tb.length + 1).fill(0));
+
+        for(let i = ta.length - 1; i >= 0; i--) {
+          for(let j = tb.length - 1; j >= 0; j--) {
+            dp[i][j] = (ta[i] === tb[j]) ? dp[i+1][j+1] + 1 : Math.max(dp[i+1][j], dp[i][j+1]);
+          }
+        }
+
+        let i = 0, j = 0, res = [];
+        while(i < ta.length && j < tb.length) {
+          if(ta[i] === tb[j]) { res.push({type: 'same', text: ta[i]}); i++; j++; }
+          else if(dp[i+1][j] >= dp[i][j+1]) { res.push({type: 'del', text: ta[i]}); i++; }
+          else { res.push({type: 'add', text: tb[j]}); j++; }
+        }
+        while(i < ta.length) { res.push({type: 'del', text: ta[i++]}); }
+        while(j < tb.length) { res.push({type: 'add', text: tb[j++]}); }
+        return res;
+      };
+
+      panel.querySelector('#diffBtn').addEventListener('click', () => {
+        const diff = computeDiff(diffA.value, diffB.value);
+        const html = [], plain = [];
+        diff.forEach(d => {
+          if(d.type === 'same') { html.push(`<span class="diff-same">${esc(d.text)}</span>`); plain.push(d.text); }
+          else if(d.type === 'add') { html.push(`<span class="diff-line diff-add">${esc(d.text)}</span>`); plain.push(`[+${d.text}]`); }
+          else { html.push(`<span class="diff-line diff-del">${esc(d.text)}</span>`); plain.push(`[-${d.text}]`); }
+        });
+        outEl.innerHTML = diff.some(d => d.type !== 'same') ? html.join('') : '<span class="diff-same">Texts are identical</span>';
+        outText.value = plain.join('');
+      });
+
+      bindAutosave(diffA, 'diffA');
+      bindAutosave(diffB, 'diffB');
+      panel.querySelector('#diffResetBtn').addEventListener('click', () => {
+        resetField(diffA, 'diffA'); resetField(diffB, 'diffB');
+        outEl.innerHTML = 'Run a comparison to see differences.'; outText.value = '';
+      });
+    }
+  });
+
+  registerTool({
+    id: 'case', category: 'text', navLabel: 'case converter',
+    eyebrow: 'text · case converter', title: 'Case Converter',
+    render: () => `
+      <div class="card">
+        <div class="io-grid">
+          <div class="field"><label>input</label><textarea id="caseIn" placeholder="Type or paste text…"></textarea></div>
+          <div class="field"><label>output</label><textarea id="caseOut" readonly></textarea></div>
+        </div>
+        <div class="action-row">
+          <button type="button" class="secondary small" id="caseUpper">UPPERCASE</button>
+          <button type="button" class="secondary small" id="caseLower">lowercase</button>
+          <button type="button" class="secondary small" id="caseTitle">Title Case</button>
+        </div>
+        ${outputActions('caseOut', 'converted-text.txt', '<button type="button" class="secondary small" id="caseReset">clear</button>')}
+      </div>
+    `,
+    init: (panel) => {
+      const input = panel.querySelector('#caseIn'), output = panel.querySelector('#caseOut');
+      let currentFn = null;
+
+      const apply = fn => { currentFn = fn; output.value = fn(input.value); };
+      
+      panel.querySelector('#caseUpper').addEventListener('click', () => apply(s => s.toUpperCase()));
+      panel.querySelector('#caseLower').addEventListener('click', () => apply(s => s.toLowerCase()));
+      panel.querySelector('#caseTitle').addEventListener('click', () => apply(s => s.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.substr(1).toLowerCase())));
+
+      input.addEventListener('input', () => { if(currentFn) output.value = currentFn(input.value); });
+      bindAutosave(input, 'caseIn');
+      panel.querySelector('#caseReset').addEventListener('click', () => { resetField(input, 'caseIn'); output.value = ''; currentFn = null; });
+    }
+  });
+
+  registerTool({
+    id: 'textstats', category: 'text', navLabel: 'text statistics',
+    eyebrow: 'text · statistics', title: 'Word, Character & Line Counter',
+    render: () => `
+      <div class="card">
+        <label>input</label><textarea id="statsIn" placeholder="Type or paste text…"></textarea>
+        <div class="result" id="statsResult">words: 0 · characters: 0 · chars (no spaces): 0 · sentences: 0 · lines: 0 · non-empty lines: 0</div>
+        ${outputActions('statsResult', 'statistics.txt', '<button type="button" class="secondary small" id="statsReset">clear</button>')}
+      </div>
+    `,
+    init: (panel) => {
+      const input = panel.querySelector('#statsIn'), result = panel.querySelector('#statsResult');
+      
+      const updateStats = () => {
+        const text = input.value;
+        const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+        const chars = text.length;
+        const charsNoSpaces = text.replace(/\s/g, '').length;
+        const sentences = text.trim() === '' ? 0 : (text.match(/[.!?]+/g) || []).length;
+        const lines = text.length === 0 ? [] : text.split('\n');
+        const nonEmptyLines = lines.filter(l => l.trim() !== '').length;
+
+        result.textContent = `words: ${words} · characters: ${chars} · chars (no spaces): ${charsNoSpaces} · sentences: ${sentences} · lines: ${lines.length} · non-empty lines: ${nonEmptyLines}`;
+      };
+
+      input.addEventListener('input', updateStats);
+      bindAutosave(input, 'statsIn');
+      panel.querySelector('#statsReset').addEventListener('click', () => {
+        resetField(input, 'statsIn');
+        updateStats();
+      });
+    }
+  });
+
+  registerTool({
+    id: 'textcleaner', category: 'text', navLabel: 'text cleaner',
+    eyebrow: 'text · cleaner', title: 'Text & Space Cleaner',
+    render: () => `
+      <div class="card">
+        <div class="io-grid">
+          <div class="field"><label>input</label><textarea id="tcIn" placeholder="Type or paste text…"></textarea></div>
+          <div class="field"><label>output</label><textarea id="tcOut" readonly></textarea></div>
+        </div>
+        <div class="action-row" style="margin-top:12px;">
+          <label class="checkfield"><input type="checkbox" id="tcTrim" checked> trim line ends</label>
+          <label class="checkfield"><input type="checkbox" id="tcEmpty" checked> remove empty lines</label>
+          <label class="checkfield"><input type="checkbox" id="tcSpaces" checked> collapse multiple spaces</label>
+          <label class="checkfield"><input type="checkbox" id="tcHtml"> strip HTML tags</label>
+        </div>
+        <div class="action-row">
+          <button type="button" id="tcBtn">clean text</button>
+          <button type="button" class="secondary" id="wsAll">remove ALL spaces</button>
+        </div>
+        ${outputActions('tcOut', 'clean-text.txt', '<button type="button" class="secondary small" id="tcReset">clear</button>')}
+      </div>
+    `,
+    init: (panel) => {
+      const input = panel.querySelector('#tcIn'), output = panel.querySelector('#tcOut');
+
+      panel.querySelector('#tcBtn').addEventListener('click', () => {
+        let text = input.value;
+        if(panel.querySelector('#tcHtml').checked) text = text.replace(/<[^>]*>/g, '');
+        let lines = text.split('\n');
+        if(panel.querySelector('#tcTrim').checked) lines = lines.map(l => l.trim());
+        if(panel.querySelector('#tcSpaces').checked) lines = lines.map(l => l.replace(/[ \t]+/g, ' '));
+        if(panel.querySelector('#tcEmpty').checked) lines = lines.filter(l => l.trim() !== '');
+        output.value = lines.join('\n');
+      });
+
+      panel.querySelector('#wsAll').addEventListener('click', () => {
+        output.value = input.value.replace(/\s+/g, '');
+      });
+
+      bindAutosave(input, 'tcIn');
+      panel.querySelector('#tcReset').addEventListener('click', () => { resetField(input, 'tcIn'); output.value = ''; });
+    }
+  });
+
+  registerTool({
+    id: 'listsorter', category: 'text', navLabel: 'list sorter',
+    eyebrow: 'text · sorter', title: 'List Sorter & Deduplicator',
+    render: () => `
+      <div class="card">
+        <label>list (one item per line)</label>
+        <textarea id="lsIn" placeholder="banana&#10;apple&#10;apple&#10;orange"></textarea>
+        <div class="action-row">
+          <button type="button" class="secondary small" id="lsAZ">sort A → Z</button>
+          <button type="button" class="secondary small" id="lsZA">sort Z → A</button>
+          <button type="button" class="secondary small" id="lsDedupe">remove duplicates</button>
+          <button type="button" class="secondary small" id="lsShuffle">shuffle</button>
+          <label class="checkfield"><input type="checkbox" id="lsCase"> ignore case</label>
+        </div>
+        ${outputActions('lsIn', 'sorted-list.txt', '<button type="button" class="secondary small" id="lsReset">clear</button>')}
+      </div>
+    `,
+    init: (panel) => {
+      const input = panel.querySelector('#lsIn'), isCase = panel.querySelector('#lsCase');
+      const getItems = () => input.value.split('\n').filter(s => s.trim() !== '');
+
+      panel.querySelector('#lsAZ').addEventListener('click', () => {
+        const items = getItems();
+        items.sort((a, b) => isCase.checked ? a.toLowerCase().localeCompare(b.toLowerCase()) : a.localeCompare(b));
+        input.value = items.join('\n');
+      });
+
+      panel.querySelector('#lsZA').addEventListener('click', () => {
+        const items = getItems();
+        items.sort((a, b) => isCase.checked ? b.toLowerCase().localeCompare(a.toLowerCase()) : b.localeCompare(a));
+        input.value = items.join('\n');
+      });
+
+      panel.querySelector('#lsDedupe').addEventListener('click', () => {
+        const items = getItems(), seen = new Set(), out = [];
+        items.forEach(it => {
+          const key = isCase.checked ? it.toLowerCase() : it;
+          if(!seen.has(key)) { seen.add(key); out.push(it); }
+        });
+        input.value = out.join('\n');
+      });
+
+      panel.querySelector('#lsShuffle').addEventListener('click', () => {
+        const items = getItems();
+        for(let i = items.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [items[i], items[j]] = [items[j], items[i]];
+        }
+        input.value = items.join('\n');
+      });
+
+      bindAutosave(input, 'lsIn');
+      panel.querySelector('#lsReset').addEventListener('click', () => resetField(input, 'lsIn'));
+    }
+  });
+
+  /* =========================================================
+     TOOLS: GENERATORS
+  ========================================================= */
+
+  registerTool({
+    id: 'picker', category: 'generators', navLabel: 'random picker',
+    eyebrow: 'generators · picker', title: 'Random Option Picker',
+    render: () => `
+      <div class="card">
+        <label>options (one per line)</label>
+        <textarea id="pickerList" placeholder="pizza&#10;sushi&#10;burger&#10;tacos"></textarea>
+        <div class="action-row">
+          <label class="checkfield"><input type="checkbox" id="pickerRemove"> remove picked option</label>
+          <button type="button" id="pickerBtn">pick option</button>
+        </div>
+        <div class="result" id="pickerResult">—</div>
+        ${outputActions('pickerResult', 'picked-option.txt', '<button type="button" class="secondary small" id="pickerReset">clear</button>')}
+      </div>
+    `,
+    init: (panel) => {
+      const list = panel.querySelector('#pickerList'), res = panel.querySelector('#pickerResult'),
+            rem = panel.querySelector('#pickerRemove');
+
+      panel.querySelector('#pickerBtn').addEventListener('click', () => {
+        const items = list.value.split('\n').map(s => s.trim()).filter(Boolean);
+        if(!items.length) { res.textContent = 'Add at least one option.'; return; }
+        const idx = Math.floor(Math.random() * items.length);
+        res.textContent = `→ ${items[idx]}`;
+        if(rem.checked) {
+          items.splice(idx, 1);
+          list.value = items.join('\n');
+          list.dispatchEvent(new Event('input'));
+        }
+      });
+
+      bindAutosave(list, 'pickerList');
+      panel.querySelector('#pickerReset').addEventListener('click', () => { resetField(list, 'pickerList'); res.textContent = '—'; });
+    }
+  });
+
+  registerTool({
+    id: 'lorem', category: 'generators', navLabel: 'lorem ipsum',
+    eyebrow: 'generators · lorem ipsum', title: 'Lorem Ipsum Generator',
+    render: () => `
+      <div class="card">
+        <div class="field-grid">
+          <div class="field"><label>paragraphs</label><input type="number" id="loremCount" min="1" max="20" value="3"></div>
+        </div>
+        <div class="action-row"><button type="button" id="loremBtn">generate text</button></div>
+        <textarea id="loremOut" style="min-height:160px;margin-top:14px;" readonly></textarea>
+        ${outputActions('loremOut', 'lorem-ipsum.txt', '<button type="button" class="secondary small" id="loremClear">clear</button>')}
+      </div>
+    `,
+    init: (panel) => {
+      const words = "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt in culpa qui officia deserunt mollit anim id est laborum".split(' ');
+      
+      const sentence = () => {
+        const len = 6 + Math.floor(Math.random() * 10);
+        const s = Array.from({length: len}, () => words[Math.floor(Math.random() * words.length)]).join(' ');
+        return s.charAt(0).toUpperCase() + s.slice(1) + '.';
+      };
+
+      const paragraph = () => Array.from({length: 3 + Math.floor(Math.random() * 4)}, sentence).join(' ');
+
+      panel.querySelector('#loremBtn').addEventListener('click', () => {
+        const count = Math.max(1, Math.min(20, parseInt(panel.querySelector('#loremCount').value, 10) || 3));
+        panel.querySelector('#loremOut').value = Array.from({length: count}, paragraph).join('\n\n');
+      });
+
+      panel.querySelector('#loremClear').addEventListener('click', () => { panel.querySelector('#loremOut').value = ''; });
+    }
+  });
+
+  registerTool({
+    id: 'randomnum', category: 'generators', navLabel: 'random numbers',
+    eyebrow: 'generators · numbers', title: 'Random Number Generator',
+    render: () => `
+      <div class="card">
+        <div class="field-grid">
+          <div class="field"><label>minimum</label><input type="number" id="rnMin" value="1"></div>
+          <div class="field"><label>maximum</label><input type="number" id="rnMax" value="100"></div>
+          <div class="field"><label>amount</label><input type="number" id="rnCount" value="1" min="1" max="1000"></div>
+        </div>
+        <div class="action-row">
+          <label class="checkfield"><input type="checkbox" id="rnUnique"> no duplicates</label>
+          <button type="button" id="rnBtn">generate numbers</button>
+        </div>
+        <div class="result" id="rnResult">—</div>
+        ${outputActions('rnResult', 'random-numbers.txt', '<button type="button" class="secondary small" id="rnReset">clear</button>')}
+      </div>
+    `,
+    init: (panel) => {
+      const res = panel.querySelector('#rnResult');
+      panel.querySelector('#rnBtn').addEventListener('click', () => {
+        const min = parseInt(panel.querySelector('#rnMin').value, 10);
+        const max = parseInt(panel.querySelector('#rnMax').value, 10);
+        const count = Math.max(1, Math.min(1000, parseInt(panel.querySelector('#rnCount').value, 10) || 1));
+        const unique = panel.querySelector('#rnUnique').checked;
+
+        if(isNaN(min) || isNaN(max) || min > max) { res.textContent = 'Invalid range. Minimum must be less than or equal to maximum.'; return; }
+        const range = max - min + 1;
+        if(unique && count > range) { res.textContent = 'Not enough numbers in range to avoid duplicates.'; return; }
+
+        let out = [];
+        if(unique) {
+          const pool = Array.from({length: range}, (_, i) => min + i);
+          for(let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+          }
+          out = pool.slice(0, count);
+        } else {
+          out = Array.from({length: count}, () => min + Math.floor(Math.random() * range));
+        }
+        res.textContent = out.join(', ');
+      });
+
+      panel.querySelector('#rnReset').addEventListener('click', () => {
+        panel.querySelector('#rnMin').value = '1';
+        panel.querySelector('#rnMax').value = '100';
+        panel.querySelector('#rnCount').value = '1';
+        panel.querySelector('#rnUnique').checked = false;
+        res.textContent = '—';
+      });
+    }
+  });
+
+  /* =========================================================
+     TOOLS: FUN
+  ========================================================= */
+
+  registerTool({
+    id: 'dice', category: 'fun', navLabel: 'virtual dice',
+    eyebrow: 'fun · dice', title: 'Dice Roller',
+    render: () => `
+      <div class="card">
+        <div class="field-grid">
+          <div class="field"><label>dice count</label><input type="number" id="diceCount" min="1" max="12" value="2"></div>
+          <div class="field">
+            <label>dice type</label>
+            <select id="diceSides">
+              <option value="4">d4</option>
+              <option value="6" selected>d6</option>
+              <option value="8">d8</option>
+              <option value="10">d10</option>
+              <option value="12">d12</option>
+              <option value="20">d20</option>
+              <option value="100">d100</option>
+            </select>
+          </div>
+        </div>
+        <div class="action-row" style="justify-content:center;"><button type="button" id="rollBtn">roll dice</button></div>
+        <div class="dice-tray" id="diceTray"></div>
+        <div class="result" id="diceSum" style="text-align:center; justify-content:center;">—</div>
+        ${outputActions('diceSum', 'dice-results.txt', '<button type="button" class="secondary small" id="diceReset">clear</button>')}
+      </div>
+    `,
+    init: (panel) => {
+      const countEl = panel.querySelector('#diceCount'), sidesEl = panel.querySelector('#diceSides'),
+            tray = panel.querySelector('#diceTray'), sumEl = panel.querySelector('#diceSum');
+
+      panel.querySelector('#rollBtn').addEventListener('click', () => {
+        const n = Math.max(1, Math.min(12, parseInt(countEl.value, 10) || 1));
+        const sides = parseInt(sidesEl.value, 10);
+        tray.innerHTML = '';
+        let sum = 0;
+
+        for(let i = 0; i < n; i++) {
+          const val = 1 + Math.floor(Math.random() * sides);
+          sum += val;
+          const d = document.createElement('div');
+          d.className = 'die rolling';
+          d.textContent = val;
+          tray.appendChild(d);
+        }
+        sumEl.textContent = n > 1 ? `total sum: ${sum}` : `result: ${sum}`;
+      });
+
+      panel.querySelector('#diceReset').addEventListener('click', () => {
+        countEl.value = '2';
+        sidesEl.value = '6';
+        tray.innerHTML = '';
+        sumEl.textContent = '—';
+      });
+    }
+  });
+
+  registerTool({
+    id: 'coinflip', category: 'fun', navLabel: 'coin flip',
+    eyebrow: 'fun · coin flip', title: 'Coin Flipper',
+    render: () => `
+      <div class="card" style="text-align:center;">
+        <div class="coin" id="coinEl">?</div>
+        <button type="button" id="coinBtn" style="margin-top:16px;">flip coin</button>
+        <div class="flip-history" id="coinHistory"></div>
+        <textarea id="coinOutput" style="display:none;"></textarea>
+        ${outputActions('coinOutput', 'coin-history.txt', '<button type="button" class="secondary small" id="coinReset">clear</button>')}
+      </div>
+    `,
+    init: (panel) => {
+      const coin = panel.querySelector('#coinEl'), history = panel.querySelector('#coinHistory'),
+            outText = panel.querySelector('#coinOutput');
+      let historyLog = [];
+
+      panel.querySelector('#coinBtn').addEventListener('click', () => {
+        coin.classList.remove('flipping');
+        void coin.offsetWidth;
+        coin.classList.add('flipping');
+        const res = Math.random() < 0.5 ? 'Heads' : 'Tails';
+
+        setTimeout(() => {
+          coin.textContent = res;
+          historyLog.unshift(res);
+          if(historyLog.length > 12) historyLog.pop();
+          history.innerHTML = historyLog.map(r => `<span>${r[0]}</span>`).join('');
+          outText.value = historyLog.join(', ');
+        }, 250);
+      });
+
+      panel.querySelector('#coinReset').addEventListener('click', () => {
+        historyLog = [];
+        coin.textContent = '?';
+        history.innerHTML = '';
+        outText.value = '';
+      });
+    }
+  });
+
+  registerTool({
+    id: 'rps', category: 'fun', navLabel: 'rock paper scissors',
+    eyebrow: 'fun · rock paper scissors', title: 'Rock Paper Scissors',
+    render: () => `
+      <div class="card" style="text-align:center;">
+        <div class="action-row" style="justify-content:center;">
+          <button type="button" class="secondary" id="rpsRock">🪨 Rock</button>
+          <button type="button" class="secondary" id="rpsPaper">📄 Paper</button>
+          <button type="button" class="secondary" id="rpsScissors">✂️ Scissors</button>
+        </div>
+        <div class="result" id="rpsResult" style="margin-top:14px; justify-content:center;">Choose an option to play</div>
+        <div class="flip-history" id="rpsHistory"></div>
+        ${outputActions('rpsResult', 'rps-result.txt', '<button type="button" class="secondary small" id="rpsReset">clear</button>')}
+      </div>
+    `,
+    init: (panel) => {
+      const resultEl = panel.querySelector('#rpsResult'), historyEl = panel.querySelector('#rpsHistory');
+      let record = [], icons = { rock: '🪨', paper: '📄', scissors: '✂️' };
+
+      const play = (player) => {
+        const choices = ['rock', 'paper', 'scissors'];
+        const cpu = choices[Math.floor(Math.random() * 3)];
+        let outcome;
+
+        if(player === cpu) outcome = 'Tie';
+        else if(
+          (player === 'rock' && cpu === 'scissors') ||
+          (player === 'paper' && cpu === 'rock') ||
+          (player === 'scissors' && cpu === 'paper')
+        ) outcome = 'You win!';
+        else outcome = 'You lose!';
+
+        resultEl.textContent = `${icons[player]} vs ${icons[cpu]} — ${outcome}`;
+        record.unshift(outcome === 'Tie' ? 'T' : outcome === 'You win!' ? 'W' : 'L');
+        if(record.length > 12) record.pop();
+        historyEl.innerHTML = record.map(r => `<span>${r}</span>`).join('');
+      };
+
+      panel.querySelector('#rpsRock').addEventListener('click', () => play('rock'));
+      panel.querySelector('#rpsPaper').addEventListener('click', () => play('paper'));
+      panel.querySelector('#rpsScissors').addEventListener('click', () => play('scissors'));
+
+      panel.querySelector('#rpsReset').addEventListener('click', () => {
+        record = [];
+        resultEl.textContent = 'Choose an option to play';
+        historyEl.innerHTML = '';
+      });
+    }
+  });
+
+  /* =========================================================
+     INTERFACE RENDER ENGINE
+  ========================================================= */
+  const navList = document.getElementById('navList');
+  const mainEl = document.getElementById('main');
+
+  const buildUI = () => {
+    let navHTML = '', panelsHTML = '';
+
+    CATEGORIES.forEach(cat => {
+      const catTools = TOOLS.filter(t => t.category === cat.id);
+      if(!catTools.length) return;
+
+      navHTML += `
+        <div class="category" data-cat="${cat.id}">
+          <button type="button" class="category-label">
+            <span>${cat.icon} ${cat.label}</span>
+            <span class="chevron">▸</span>
+          </button>
+          ${catTools.map(t => `<button type="button" class="tool-link" data-tool="${t.id}">${t.navLabel}</button>`).join('')}
+        </div>
+      `;
+    });
+
+    TOOLS.forEach(t => {
+      panelsHTML += `
+        <section class="panel" id="panel-${t.id}">
+          <div class="panel-head">
+            <p class="panel-eyebrow">${t.eyebrow}</p>
+            <h2>${t.title}</h2>
+          </div>
+          ${t.render()}
+        </section>
+      `;
+    });
+
+    navList.innerHTML = navHTML;
+    mainEl.innerHTML = panelsHTML;
+
+    TOOLS.forEach(t => {
+      const p = document.getElementById(`panel-${t.id}`);
+      try { t.init(p); } catch(err) { console.error(`Error initializing ${t.id}:`, err); }
+    });
+
+    const footer = document.createElement('footer');
+    footer.className = 'foot';
+    footer.textContent = 'Personal project, built with AI assistance. No support or bug fixes provided.';
+    mainEl.appendChild(footer);
+  };
+
+  /* =========================================================
+     NAVIGATION & SYSTEM ENGINE
+  ========================================================= */
+  const showTool = (id) => {
+    document.querySelectorAll('.tool-link').forEach(l => l.classList.toggle('active', l.dataset.tool === id));
+    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${id}`));
+    closeSidebar();
+    window.scrollTo({top: 0});
+  };
+
+  document.addEventListener('click', e => {
+    const toolLink = e.target.closest('.tool-link');
+    if(toolLink) showTool(toolLink.dataset.tool);
+
+    const catLabel = e.target.closest('.category-label');
+    if(catLabel) {
+      const cat = catLabel.closest('.category');
+      const isExpanded = cat.classList.contains('expanded');
+      document.querySelectorAll('.category').forEach(c => c.classList.remove('expanded'));
+      if(!isExpanded) cat.classList.add('expanded');
+    }
+  });
+
+  // Mobile Drawer
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  const openSidebar = () => { sidebar.classList.add('open'); backdrop.classList.add('open'); };
+  const closeSidebar = () => { sidebar.classList.remove('open'); backdrop.classList.remove('open'); };
+
+  document.getElementById('navToggle').addEventListener('click', openSidebar);
+  backdrop.addEventListener('click', closeSidebar);
+
+  /* =========================================================
+     INITIALIZATION
+  ========================================================= */
+  buildUI();
+
+  // Load theme (Light by default)
+  const savedTheme = store.get('theme') || 'light';
+  window.setTheme(savedTheme);
+
+  if(TOOLS.length > 0) {
+    showTool(TOOLS[0].id);
+    const firstCat = document.querySelector('.category');
+    if(firstCat) firstCat.classList.add('expanded');
+  }
+})();
+
+/* ===== Theme Switcher ===== */
+function setTheme(mode) {
+  const root = document.documentElement;
+  root.setAttribute('data-theme', mode === 'dark' ? 'dark' : 'light');
+  
+  const btnLight = document.getElementById('btnLight');
+  const btnDark = document.getElementById('btnDark');
+  
+  if(btnLight && btnDark) {
+    btnLight.classList.toggle('active', mode === 'light');
+    btnDark.classList.toggle('active', mode === 'dark');
+  }
+  
+  try { localStorage.setItem('daseutils.theme', mode); } catch(e){}
+}
+</script>
+</body>
+</html>
