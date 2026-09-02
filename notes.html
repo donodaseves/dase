@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dase/notes</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+  :root {
+    --bg: #F5F6FA;
+    --panel: #FFFFFF;
+    --card: #F5F6FA;
+    --sidebar: #FFFFFF;
+    --text: #333333;
+    --muted: #767C8C;
+    --accent: #2F5EFF;
+    --accent2: #FF5A3C;
+    --line: #E7E8EF;
+    --bar: #E2E5F5;
+    --canvas-dot: #CBD1E1;
+    
+    --note-yellow: #FFF18F;
+    --note-yellow-header: #F4E26A;
+    --note-blue: #CDE2FF;
+    --note-blue-header: #B0D1FF;
+    --note-green: #D1F8D3;
+    --note-green-header: #B1EBB5;
+    --note-pink: #FFD6E8;
+    --note-pink-header: #FBB4D3;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0E0F14;
+    --panel: #14161D;
+    --card: #181A22;
+    --sidebar: #12131A;
+    --text: #F4F5F9;
+    --muted: #8B8FA3;
+    --line: #262834;
+    --bar: #21232D;
+    --canvas-dot: #2A2D3D;
+  }
+
+  body, html {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg); color: var(--text);
+  }
+
+  #canvas-container {
+    width: 100vw; height: 100vh;
+    position: relative;
+    cursor: default;
+    background-image: radial-gradient(var(--canvas-dot) 1.5px, transparent 1.5px);
+    background-size: 24px 24px;
+  }
+
+  #canvas-world {
+    position: absolute;
+    top: 0; left: 0;
+    width: 0; height: 0;
+    transform-origin: 0 0;
+  }
+
+  svg#connections-layer {
+    position: absolute;
+    top: -50000px; left: -50000px;
+    width: 100000px; height: 100000px;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .ui-panel {
+    position: fixed;
+    z-index: 1000;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  }
+
+  .sidebar {
+    top: 20px; left: 20px; bottom: 20px;
+    width: 220px; padding: 20px;
+    display: flex; flex-direction: column;
+  }
+  .brand { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 20px; color: var(--text); }
+  .brand span { color: var(--accent); }
+
+  .tabs-header { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .add-tab-btn { cursor: pointer; color: var(--accent); font-size: 16px; font-weight: 800; }
+  .tab-list { display: flex; flex-direction: column; gap: 4px; flex: 1; overflow-y: auto; }
+  .tab-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; border-radius: 10px; font-size: 13.5px; font-weight: 600;
+    color: var(--muted); cursor: pointer; transition: all 0.15s;
+  }
+  .tab-item:hover { background: var(--bg); color: var(--text); }
+  .tab-item.active { background: var(--accent); color: #fff; }
+  .tab-item .del-tab { display: none; font-size: 12px; opacity: 0.7; }
+  .tab-item:hover .del-tab { display: block; }
+
+  /* Controls at sidebar bottom */
+  .sidebar-footer {
+    display: flex; flex-direction: column; gap: 12px;
+    padding-top: 16px; border-top: 1px solid var(--line);
+    margin-top: auto;
+  }
+
+  /* Storage Meter Indicator */
+  .storage-indicator {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .storage-header {
+    display: flex;
+    justify-content: space-between;
+  }
+  .storage-bar-track {
+    height: 6px;
+    border-radius: 4px;
+    background: var(--bar);
+    overflow: hidden;
+  }
+  .storage-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+
+  .reset-btn {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--muted);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all .2s ease;
+  }
+  .reset-btn:hover {
+    background: var(--accent2);
+    color: #ffffff;
+    border-color: var(--accent2);
+  }
+
+  .user-box {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .theme-pill-switch {
+    display: flex; align-items: center; background: var(--card);
+    border: 1px solid var(--line); border-radius: 20px; padding: 3px;
+    flex: 1; justify-content: space-between;
+  }
+  .theme-pill-btn {
+    flex: 1; border: none; background: transparent; color: var(--muted);
+    padding: 6px 0; border-radius: 16px; cursor: pointer;
+    font-size: 13px; display: flex; align-items: center; justify-content: center;
+    transition: all .2s ease;
+  }
+  .theme-pill-btn.active {
+    background: var(--panel); color: var(--text);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08); font-weight: 700;
+  }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--card); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; text-decoration: none; color: var(--text);
+    font-size: 14px; font-weight: 700; transition: background .2s;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover { background: var(--bar); }
+
+  .toolbar {
+    top: 20px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 6px; padding: 6px; align-items: center;
+  }
+  .tool-btn {
+    border: none; background: transparent; color: var(--text);
+    padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+    transition: background 0.15s;
+  }
+  .tool-btn:hover { background: var(--bg); }
+  .tool-btn svg { width: 16px; height: 16px; fill: currentColor; }
+  .tool-btn span.key { font-size: 10px; opacity: 0.5; background: var(--line); padding: 2px 4px; border-radius: 4px; }
+  .divider { width: 1px; height: 20px; background: var(--line); margin: 0 4px; }
+
+  .top-right { top: 20px; right: 20px; display: flex; gap: 10px; padding: 6px 12px; align-items: center; }
+  .search-box { display: flex; align-items: center; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px; gap: 6px; }
+  .search-box input { border: none; background: transparent; color: var(--text); outline: none; font-size: 13px; width: 110px; }
+  .search-box svg { width: 14px; height: 14px; fill: var(--muted); }
+
+  .stats-panel { bottom: 20px; right: 20px; padding: 10px 16px; font-size: 12px; font-weight: 600; color: var(--muted); display: flex; gap: 14px; }
+  .stats-panel span { color: var(--text); font-weight: 700; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 5000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 24px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  }
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .modal p { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.4; }
+  .modal input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    font-size: 14px;
+    margin-bottom: 16px;
+    outline: none;
+  }
+  .modal input:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .modal-btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+  }
+  .modal-btn.cancel { background: var(--card); color: var(--text); border: 1px solid var(--line); }
+  .modal-btn.confirm { background: var(--accent2); color: #fff; }
+
+  /* Element Base */
+  .element {
+    position: absolute;
+    z-index: 10;
+    cursor: move;
+    transform-origin: center center;
+    box-sizing: border-box;
+  }
+  .element.selected { outline: 2px dashed var(--accent); }
+  .element.highlighted { outline: 3px solid var(--accent2) !important; }
+
+  /* Interactive Handles */
+  .handle {
+    position: absolute;
+    width: 16px; height: 16px;
+    background: #FFFFFF;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    display: none;
+    z-index: 9999;
+  }
+  .element.selected > .handle { display: block; }
+  
+  .handle.se {
+    bottom: -8px; right: -8px;
+    cursor: nwse-resize;
+  }
+  .handle.rotate {
+    top: -26px; left: calc(50% - 8px);
+    cursor: grab;
+    background: var(--accent);
+  }
+  .handle.rotate::after {
+    content: ''; position: absolute; top: 14px; left: 5px;
+    width: 2px; height: 10px; background: var(--accent);
+  }
+
+  /* Sticky Note */
+  .el-note {
+    background: var(--note-yellow);
+    width: 250px; height: 220px;
+    min-width: 140px; min-height: 120px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    display: flex; flex-direction: column;
+    overflow: visible; color: #4A4000;
+  }
+  .el-note-inner {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    border-radius: 12px; overflow: hidden;
+  }
+  .el-note-header {
+    background: var(--note-yellow-header);
+    padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; color: #665800; font-weight: 600;
+  }
+  .header-left { display: flex; align-items: center; gap: 6px; }
+  .header-left svg { width: 14px; height: 14px; fill: #665800; }
+  .btn-copy {
+    background: #FFFFFF; border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 6px; padding: 3px 10px; font-size: 12px;
+    font-weight: 600; color: #333; cursor: pointer;
+  }
+  .el-note-content { padding: 14px; display: flex; flex-direction: column; flex: 1; }
+  .el-note-title {
+    font-size: 18px; font-weight: 800; border: none; background: transparent;
+    outline: none; color: #332B00; margin-bottom: 8px; font-family: inherit;
+  }
+  .el-note-body {
+    border: none; background: transparent; outline: none; resize: none;
+    width: 100%; flex: 1; font-family: inherit; font-size: 14px;
+    color: #4A4000; line-height: 1.4;
+  }
+
+  /* Checklist */
+  .el-checklist {
+    background: var(--panel);
+    width: 260px; height: 220px;
+    min-width: 180px; min-height: 140px;
+    border-radius: 12px; border: 1px solid var(--line);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 12px;
+    color: var(--text); display: flex; flex-direction: column;
+  }
+  .checklist-header { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); margin-bottom: 8px; font-weight: 500; }
+  .checklist-header svg { width: 14px; height: 14px; fill: var(--muted); }
+  .checklist-title { font-size: 18px; font-weight: 800; border: none; background: transparent; outline: none; color: var(--text); margin-bottom: 8px; font-family: inherit; width: 100%; }
+  .check-items-wrapper { flex: 1; overflow-y: auto; }
+  .check-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .check-item input[type="checkbox"] { width: 16px; height: 16px; border-radius: 4px; accent-color: var(--accent); cursor: pointer; }
+  .check-item input[type="text"] { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-family: inherit; font-size: 14px; }
+  .check-item.done input[type="text"] { text-decoration: line-through; color: var(--muted); }
+  .btn-add-item { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; font-size: 12px; font-weight: 700; color: var(--text); cursor: pointer; margin-top: 8px; }
+
+  /* Text */
+  .el-text {
+    background: transparent;
+    width: 200px; height: 80px;
+    min-width: 80px; min-height: 40px;
+    padding: 4px; display: flex; flex-direction: column;
+  }
+  .el-text-input {
+    border: none; background: transparent; outline: none;
+    font-family: inherit; font-size: 16px; font-weight: 600;
+    color: var(--text); width: 100%; height: 100%; resize: none; overflow: hidden;
+  }
+
+  /* Arrow */
+  .el-arrow {
+    background: transparent;
+    width: 140px; height: 30px;
+    min-width: 40px; min-height: 20px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .arrow-svg { width: 100%; height: 100%; overflow: visible; }
+
+  /* Group Frame */
+  .el-frame {
+    background: rgba(47, 94, 255, 0.03);
+    border: 2px dashed var(--accent);
+    border-radius: 12px;
+    width: 400px; height: 300px;
+    min-width: 150px; min-height: 100px;
+  }
+  .frame-title {
+    position: absolute; top: -28px; left: 0;
+    background: var(--accent); color: #fff;
+    padding: 2px 8px; border-radius: 6px;
+    font-size: 11px; font-weight: 700; border: none; outline: none;
+  }
+
+  .color-picker { display: flex; gap: 4px; position: absolute; top: -28px; right: 0; background: var(--panel); padding: 4px; border-radius: 8px; border: 1px solid var(--line); z-index: 10; }
+  .color-dot { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; }
+
+  .context-menu {
+    position: fixed; z-index: 2000; display: none;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    padding: 6px; min-width: 150px;
+  }
+  .context-menu-item {
+    padding: 8px 12px; font-size: 12.5px; font-weight: 600;
+    border-radius: 6px; cursor: pointer; color: var(--text);
+    display: flex; justify-space-between;
+  }
+  .context-menu-item:hover { background: var(--accent); color: #fff; }
+
+  body.presentation .ui-panel { opacity: 0; pointer-events: none; }
+  .exit-pres-btn {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 3000; display: none; background: var(--accent2); color: #fff;
+    border: none; padding: 10px 20px; border-radius: 20px; font-weight: 700; cursor: pointer;
+  }
+  body.presentation .exit-pres-btn { display: block; }
+</style>
+</head>
+<body>
+
+<div class="ui-panel sidebar">
+  <div class="brand">dase<span>/notes</span></div>
+  <div class="tabs-header">
+    <span>Workspaces</span>
+    <span class="add-tab-btn" id="btn-add-tab" title="New Workspace">+</span>
+  </div>
+  <div class="tab-list" id="tab-list"></div>
+
+  <div class="sidebar-footer">
+    <div class="storage-indicator">
+      <div class="storage-header">
+        <span>Storage</span>
+        <span id="storageText">0 KB / 5 MB</span>
+      </div>
+      <div class="storage-bar-track">
+        <div class="storage-bar-fill" id="storageBar"></div>
+      </div>
+    </div>
+
+    <button class="reset-btn" onclick="openResetModal()">↺ Reset Data</button>
+
+    <div class="user-box">
+      <div class="theme-pill-switch">
+        <button class="theme-pill-btn active" id="btnLight" onclick="setTheme('light')" aria-label="Light Mode">☀</button>
+        <button class="theme-pill-btn" id="btnDark" onclick="setTheme('dark')" aria-label="Dark Mode">☾</button>
+      </div>
+      <a href="https://donodaseves.github.io/dase/" class="icon-btn" title="Go to website">D</a>
+    </div>
+  </div>
+</div>
+
+<div class="ui-panel toolbar">
+  <button class="tool-btn" id="btn-sticky">
+    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h10l6-6V5c0-1.1-.9-2-2-2zm0 13l-4 4H5V5h14v11z"/></svg>
+    Sticky Note <span class="key">N</span>
+  </button>
+  <button class="tool-btn" id="btn-text">
+    <svg viewBox="0 0 24 24"><path d="M5 4v3h5v12h3V7h5V4H5z"/></svg>
+    Text <span class="key">T</span>
+  </button>
+  <button class="tool-btn" id="btn-check">
+    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+    Checklist <span class="key">C</span>
+  </button>
+  <button class="tool-btn" id="btn-arrow">
+    <svg viewBox="0 0 24 24"><path d="M16.01 11H4v2h12.01v3L20 12l-3.99-4v3z"/></svg>
+    Arrow <span class="key">A</span>
+  </button>
+  <button class="tool-btn" id="btn-frame">
+    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
+    Group Frame
+  </button>
+  <div class="divider"></div>
+  <button class="tool-btn" id="btn-connect">
+    <svg viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+    Connect
+  </button>
+</div>
+
+<div class="ui-panel top-right">
+  <div class="search-box">
+    <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+    <input type="text" id="search-input" placeholder="Search canvas...">
+  </div>
+  <button class="tool-btn" id="btn-present">
+    <svg viewBox="0 0 24 24"><path d="M10 8v8l5-4-5-4zm9-5H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
+    Present
+  </button>
+</div>
+
+<div class="ui-panel stats-panel">
+  <div>Words: <span id="stat-words">0</span></div>
+  <div>Chars: <span id="stat-chars">0</span></div>
+</div>
+
+<div class="context-menu" id="context-menu">
+  <div class="context-menu-item" id="ctx-copy">Copy <span>Ctrl+C</span></div>
+  <div class="context-menu-item" id="ctx-duplicate">Duplicate <span>Ctrl+D</span></div>
+  <div class="context-menu-item" id="ctx-front">Bring to Front</div>
+  <div class="context-menu-item" id="ctx-back">Send to Back</div>
+  <div class="context-menu-item" id="ctx-delete" style="color:var(--accent2)">Delete <span>Del</span></div>
+</div>
+
+<button class="exit-pres-btn" id="btn-exit-present">Exit Presentation Mode</button>
+
+<div id="canvas-container">
+  <div id="canvas-world">
+    <svg id="connections-layer"></svg>
+  </div>
+</div>
+
+<div class="modal-overlay" id="resetModal">
+  <div class="modal">
+    <h3>Reset LocalStorage</h3>
+    <p>Type <strong>"dase"</strong> below to confirm deleting all local data.</p>
+    <input type="text" id="confirmInput" placeholder="dase" autocomplete="off" />
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeResetModal()">Cancel</button>
+      <button class="modal-btn confirm" onclick="confirmReset()">Delete All</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TUTORIAL_DATA = [
+  { id: 'tut_frame', type: 'frame', x: 80, y: 60, width: 440, height: 320, title: 'Group Frame', zIndex: 1 },
+  { id: 'tut_1', type: 'note', x: 100, y: 100, title: 'Sticky Note', text: 'Drag the bottom-right corner to RESIZE, or top dot to ROTATE.', bgColor: 'var(--note-yellow)', width: 250, height: 220, rotation: 0, zIndex: 2 },
+  { id: 'tut_2', type: 'arrow', x: 560, y: 180, width: 140, height: 30, rotation: 0, zIndex: 3 }
+];
+
+const STATE = {
+  theme: localStorage.getItem('dase_theme') || 'light',
+  tabs: JSON.parse(localStorage.getItem('dase_tabs')) || [{ id: 'welcome', name: 'Welcome' }],
+  activeTab: localStorage.getItem('dase_active_tab') || 'welcome',
+  elements: JSON.parse(localStorage.getItem('dase_elements')) || { 'welcome': TUTORIAL_DATA },
+  connections: JSON.parse(localStorage.getItem('dase_connections')) || [],
+  panX: 0, panY: 0, zoom: 1,
+  isPanning: false, startPanX: 0, startPanY: 0,
+  selectedIds: new Set(),
+  connectingSourceId: null,
+  history: [], historyIndex: -1
+};
+
+const container = document.getElementById('canvas-container');
+const world = document.getElementById('canvas-world');
+
+function updateTransform() {
+  world.style.transform = `translate(${STATE.panX}px, ${STATE.panY}px) scale(${STATE.zoom})`;
+}
+
+container.addEventListener('mousedown', (e) => {
+  if (e.button === 1) {
+    e.preventDefault();
+    STATE.isPanning = true;
+    STATE.startPanX = e.clientX - STATE.panX;
+    STATE.startPanY = e.clientY - STATE.panY;
+  } else if (e.button === 0 && (e.target === container || e.target.id === 'connections-layer')) {
+    clearSelection();
+  }
+});
+
+window.addEventListener('mousemove', (e) => {
+  if (STATE.isPanning) {
+    STATE.panX = e.clientX - STATE.startPanX;
+    STATE.panY = e.clientY - STATE.startPanY;
+    updateTransform();
+  }
+});
+
+window.addEventListener('mouseup', (e) => { if (e.button === 1) STATE.isPanning = false; });
+
+container.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const zoomFactor = 0.05;
+  if (e.deltaY < 0) STATE.zoom = Math.min(STATE.zoom + zoomFactor, 2.5);
+  else STATE.zoom = Math.max(STATE.zoom - zoomFactor, 0.3);
+  updateTransform();
+}, { passive: false });
+
+function saveState() {
+  localStorage.setItem('dase_theme', STATE.theme);
+  localStorage.setItem('dase_tabs', JSON.stringify(STATE.tabs));
+  localStorage.setItem('dase_active_tab', STATE.activeTab);
+  localStorage.setItem('dase_elements', JSON.stringify(STATE.elements));
+  localStorage.setItem('dase_connections', JSON.stringify(STATE.connections));
+  updateStats();
+  renderConnections();
+  updateStorageVisualizer();
+}
+
+function pushHistory() {
+  const currentTabEls = JSON.stringify(STATE.elements[STATE.activeTab] || []);
+  if (STATE.historyIndex === -1 || STATE.history[STATE.historyIndex] !== currentTabEls) {
+    STATE.history = STATE.history.slice(0, STATE.historyIndex + 1);
+    STATE.history.push(currentTabEls);
+    STATE.historyIndex++;
+  }
+}
+
+function renderElements() {
+  world.innerHTML = '<svg id="connections-layer"></svg>';
+  const currentEls = STATE.elements[STATE.activeTab] || [];
+  
+  currentEls.sort((a,b) => (a.zIndex || 0) - (b.zIndex || 0));
+
+  currentEls.forEach(el => {
+    const div = document.createElement('div');
+    div.className = `element el-${el.type} ${STATE.selectedIds.has(el.id) ? 'selected' : ''}`;
+    div.id = `el-${el.id}`;
+    div.style.left = `${el.x}px`;
+    div.style.top = `${el.y}px`;
+    div.style.zIndex = el.zIndex || 10;
+    
+    if (el.width) div.style.width = `${el.width}px`;
+    if (el.height) div.style.height = `${el.height}px`;
+    if (el.rotation && el.type !== 'frame') {
+      div.style.transform = `rotate(${el.rotation}deg)`;
+    }
+
+    buildElementContent(div, el);
+    setupElementEvents(div, el);
+    world.appendChild(div);
+  });
+
+  renderConnections();
+  updateStats();
+}
+
+function buildElementContent(div, el) {
+  if (el.type === 'note') {
+    let headerColor = 'var(--note-yellow-header)';
+    if (el.bgColor === 'var(--note-blue)') headerColor = 'var(--note-blue-header)';
+    if (el.bgColor === 'var(--note-green)') headerColor = 'var(--note-green-header)';
+    if (el.bgColor === 'var(--note-pink)') headerColor = 'var(--note-pink-header)';
+
+    div.style.background = el.bgColor || 'var(--note-yellow)';
+    div.innerHTML = `
+      <div class="color-picker">
+        <div class="color-dot" style="background:var(--note-yellow)" onclick="changeColor('${el.id}', 'var(--note-yellow)')"></div>
+        <div class="color-dot" style="background:var(--note-blue)" onclick="changeColor('${el.id}', 'var(--note-blue)')"></div>
+        <div class="color-dot" style="background:var(--note-green)" onclick="changeColor('${el.id}', 'var(--note-green)')"></div>
+        <div class="color-dot" style="background:var(--note-pink)" onclick="changeColor('${el.id}', 'var(--note-pink)')"></div>
+      </div>
+      <div class="el-note-inner">
+        <div class="el-note-header" style="background: ${headerColor}">
+          <div class="header-left">
+            <svg viewBox="0 0 24 24"><path d="M10 9h4V6h3l-5-5-5 5h3v3zm-1 1H6V7l-5 5 5 5v-3h3v-4zm14 2l-5-5v3h-3v4h3v3l5-5zm-9 3h-4v3H7l5 5 5-5h-3v-3z"/></svg>
+            Sticky Note
+          </div>
+          <button class="btn-copy" onclick="copyNoteText('${el.id}')">Copy</button>
+        </div>
+        <div class="el-note-content">
+          <input class="el-note-title" value="${el.title || ''}" placeholder="Title" oninput="updateElData('${el.id}', 'title', this.value)">
+          <textarea class="el-note-body" placeholder="Write here..." oninput="updateElData('${el.id}', 'text', this.value)">${el.text || ''}</textarea>
+        </div>
+      </div>
+    `;
+  } else if (el.type === 'checklist') {
+    let itemsHtml = (el.items || []).map((it, idx) => `
+      <div class="check-item ${it.done ? 'done' : ''}">
+        <input type="checkbox" ${it.done ? 'checked' : ''} onchange="toggleCheckItem('${el.id}', ${idx})">
+        <input type="text" value="${it.text}" placeholder="Task..." oninput="updateCheckItemText('${el.id}', ${idx}, this.value)">
+      </div>
+    `).join('');
+    div.innerHTML = `
+      <div class="checklist-header">
+        <svg viewBox="0 0 24 24"><path d="M10 9h4V6h3l-5-5-5 5h3v3zm-1 1H6V7l-5 5 5 5v-3h3v-4zm14 2l-5-5v3h-3v4h3v3l5-5zm-9 3h-4v3H7l5 5 5-5h-3v-3z"/></svg>
+        Checklist
+      </div>
+      <input class="checklist-title" value="${el.title || ''}" placeholder="Checklist Title" oninput="updateElData('${el.id}', 'title', this.value)">
+      <div class="check-items-wrapper">${itemsHtml}</div>
+      <button class="btn-add-item" onclick="addCheckItem('${el.id}')">+ Add Item</button>
+    `;
+  } else if (el.type === 'text') {
+    div.innerHTML = `<textarea class="el-text-input" placeholder="Type text..." oninput="updateElData('${el.id}', 'text', this.value);">${el.text || ''}</textarea>`;
+  } else if (el.type === 'arrow') {
+    const w = el.width || 140;
+    const h = el.height || 30;
+    div.innerHTML = `
+      <svg class="arrow-svg" width="100%" height="100%">
+        <defs>
+          <marker id="arrowhead-${el.id}" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="var(--accent)" />
+          </marker>
+        </defs>
+        <line x1="5" y1="${h/2}" x2="${w - 15}" y2="${h/2}" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" marker-end="url(#arrowhead-${el.id})" vector-effect="non-scaling-stroke"/>
+      </svg>
+    `;
+  } else if (el.type === 'frame') {
+    div.innerHTML = `<input class="frame-title" value="${el.title || 'Group Frame'}" oninput="updateElData('${el.id}', 'title', this.value)">`;
+  }
+
+  // Add Handle Elements Direct to Container
+  const seHandle = document.createElement('div');
+  seHandle.className = 'handle se';
+  div.appendChild(seHandle);
+
+  if (el.type !== 'frame') {
+    const rotHandle = document.createElement('div');
+    rotHandle.className = 'handle rotate';
+    div.appendChild(rotHandle);
+  }
+}
+
+function setupElementEvents(div, el) {
+  div.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    if (e.target.classList.contains('handle') || e.target.classList.contains('color-dot')) return;
+
+    if (!e.shiftKey && !STATE.selectedIds.has(el.id)) clearSelection();
+    STATE.selectedIds.add(el.id);
+    renderSelectionStates();
+
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON') return;
+
+    e.stopPropagation();
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    
+    const selectedEls = (STATE.elements[STATE.activeTab] || []).filter(item => STATE.selectedIds.has(item.id));
+    const initialPositions = selectedEls.map(item => ({ id: item.id, x: item.x, y: item.y }));
+
+    if (el.type === 'frame') {
+      const children = (STATE.elements[STATE.activeTab] || []).filter(child => 
+        child.id !== el.id &&
+        child.x >= el.x && child.x <= el.x + el.width &&
+        child.y >= el.y && child.y <= el.y + el.height
+      );
+      children.forEach(child => {
+        if (!initialPositions.find(p => p.id === child.id)) {
+          initialPositions.push({ id: child.id, x: child.x, y: child.y });
+        }
+      });
+    }
+
+    const onMouseMove = (moveEvent) => {
+      const dx = (moveEvent.clientX - startX) / STATE.zoom;
+      const dy = (moveEvent.clientY - startY) / STATE.zoom;
+
+      initialPositions.forEach(pos => {
+        const item = STATE.elements[STATE.activeTab].find(i => i.id === pos.id);
+        if (item) {
+          item.x = pos.x + dx;
+          item.y = pos.y + dy;
+          const node = document.getElementById(`el-${item.id}`);
+          if (node) {
+            node.style.left = `${item.x}px`;
+            node.style.top = `${item.y}px`;
+          }
+        }
+      });
+      renderConnections();
+    };
+
+    const onMouseUp = () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      pushHistory();
+      saveState();
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  });
+
+  const seHandle = div.querySelector('.handle.se');
+  if (seHandle) {
+    seHandle.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const startW = el.width || div.offsetWidth;
+      const startH = el.height || div.offsetHeight;
+
+      const onMouseMove = (moveEvent) => {
+        const minW = el.type === 'arrow' ? 40 : (el.type === 'text' ? 80 : 140);
+        const minH = el.type === 'arrow' ? 20 : (el.type === 'text' ? 40 : 100);
+
+        el.width = Math.max(minW, startW + (moveEvent.clientX - startX) / STATE.zoom);
+        el.height = Math.max(minH, startH + (moveEvent.clientY - startY) / STATE.zoom);
+        
+        div.style.width = `${el.width}px`;
+        div.style.height = `${el.height}px`;
+
+        if (el.type === 'arrow') {
+          const line = div.querySelector('line');
+          if (line) {
+            line.setAttribute('y1', el.height / 2);
+            line.setAttribute('x2', el.width - 15);
+            line.setAttribute('y2', el.height / 2);
+          }
+        }
+        renderConnections();
+      };
+
+      const onMouseUp = () => {
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+        saveState();
+      };
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    });
+  }
+
+  const rotHandle = div.querySelector('.handle.rotate');
+  if (rotHandle) {
+    rotHandle.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+
+      const onMouseMove = (moveEvent) => {
+        const rect = div.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        const rad = Math.atan2(moveEvent.clientY - centerY, moveEvent.clientX - centerX);
+        let deg = Math.round(rad * (180 / Math.PI)) + 90;
+
+        el.rotation = deg;
+        div.style.transform = `rotate(${deg}deg)`;
+        renderConnections();
+      };
+
+      const onMouseUp = () => {
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+        saveState();
+      };
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    });
+  }
+}
+
+function createEl(type) {
+  const id = 'el_' + Date.now();
+  const x = (-STATE.panX + window.innerWidth / 2) / STATE.zoom - 100;
+  const y = (-STATE.panY + window.innerHeight / 2) / STATE.zoom - 80;
+
+  const newEl = {
+    id, type, x, y, rotation: 0,
+    zIndex: (STATE.elements[STATE.activeTab] || []).length + 10
+  };
+
+  if (type === 'note') { newEl.title = 'Title'; newEl.text = 'Write here...'; newEl.bgColor = 'var(--note-yellow)'; newEl.width = 250; newEl.height = 220; }
+  if (type === 'text') { newEl.text = 'New Text'; newEl.width = 200; newEl.height = 80; }
+  if (type === 'checklist') { newEl.title = 'Checklist'; newEl.width = 260; newEl.height = 220; newEl.items = [{text:'Task 1', done:false},{text:'Task 2', done:false}]; }
+  if (type === 'arrow') { newEl.width = 140; newEl.height = 30; }
+  if (type === 'frame') { newEl.title = 'Group Frame'; newEl.width = 400; newEl.height = 300; newEl.zIndex = 1; }
+
+  if (!STATE.elements[STATE.activeTab]) STATE.elements[STATE.activeTab] = [];
+  STATE.elements[STATE.activeTab].push(newEl);
+
+  clearSelection();
+  STATE.selectedIds.add(id);
+  pushHistory();
+  saveState();
+  renderElements();
+}
+
+function updateElData(id, field, value) {
+  const item = (STATE.elements[STATE.activeTab] || []).find(i => i.id === id);
+  if (item) { item[field] = value; saveState(); }
+}
+
+function changeColor(id, color) {
+  const item = (STATE.elements[STATE.activeTab] || []).find(i => i.id === id);
+  if (item) { item.bgColor = color; renderElements(); saveState(); }
+}
+
+function copyNoteText(id) {
+  const item = (STATE.elements[STATE.activeTab] || []).find(i => i.id === id);
+  if (item) {
+    const fullText = `${item.title || ''}\n${item.text || ''}`;
+    navigator.clipboard.writeText(fullText);
+  }
+}
+
+function toggleCheckItem(id, idx) {
+  const item = STATE.elements[STATE.activeTab].find(i => i.id === id);
+  if (item && item.items[idx]) {
+    item.items[idx].done = !item.items[idx].done;
+    renderElements(); saveState();
+  }
+}
+
+function updateCheckItemText(id, idx, val) {
+  const item = STATE.elements[STATE.activeTab].find(i => i.id === id);
+  if (item && item.items[idx]) { item.items[idx].text = val; saveState(); }
+}
+
+function addCheckItem(id) {
+  const item = STATE.elements[STATE.activeTab].find(i => i.id === id);
+  if (item) {
+    item.items.push({text: 'Task', done: false});
+    renderElements(); saveState();
+  }
+}
+
+function clearSelection() {
+  STATE.selectedIds.clear();
+  renderSelectionStates();
+}
+
+function renderSelectionStates() {
+  const nodes = document.querySelectorAll('.element');
+  nodes.forEach(n => {
+    const id = n.id.replace('el-', '');
+    if (STATE.selectedIds.has(id)) n.classList.add('selected');
+    else n.classList.remove('selected');
+  });
+}
+
+function deleteSelected() {
+  if (STATE.selectedIds.size === 0) return;
+  STATE.elements[STATE.activeTab] = (STATE.elements[STATE.activeTab] || []).filter(el => !STATE.selectedIds.has(el.id));
+  STATE.connections = STATE.connections.filter(c => !STATE.selectedIds.has(c.from) && !STATE.selectedIds.has(c.to));
+  clearSelection();
+  pushHistory();
+  saveState();
+  renderElements();
+}
+
+function duplicateSelected() {
+  const toAdd = [];
+  STATE.selectedIds.forEach(id => {
+    const orig = STATE.elements[STATE.activeTab].find(i => i.id === id);
+    if (orig) {
+      const copy = JSON.parse(JSON.stringify(orig));
+      copy.id = 'el_' + Date.now() + Math.random().toString(36).substr(2, 4);
+      copy.x += 30; copy.y += 30;
+      toAdd.push(copy);
+    }
+  });
+  clearSelection();
+  toAdd.forEach(item => {
+    STATE.elements[STATE.activeTab].push(item);
+    STATE.selectedIds.add(item.id);
+  });
+  pushHistory();
+  saveState();
+  renderElements();
+}
+
+function setLayer(direction) {
+  STATE.selectedIds.forEach(id => {
+    const item = STATE.elements[STATE.activeTab].find(i => i.id === id);
+    if (item) {
+      if (direction === 'front') item.zIndex = (item.zIndex || 10) + 10;
+      else item.zIndex = Math.max(1, (item.zIndex || 10) - 10);
+    }
+  });
+  saveState();
+  renderElements();
+}
+
+function handleConnectClick() {
+  if (STATE.selectedIds.size === 1) {
+    const id = Array.from(STATE.selectedIds)[0];
+    if (!STATE.connectingSourceId) {
+      STATE.connectingSourceId = id;
+      alert('Select target element and click Connect again.');
+    } else {
+      if (STATE.connectingSourceId !== id) {
+        STATE.connections.push({ from: STATE.connectingSourceId, to: id });
+        STATE.connectingSourceId = null;
+        saveState();
+        renderConnections();
+      }
+    }
+  } else alert('Select exactly 1 source element first.');
+}
+
+function renderConnections() {
+  const svg = document.getElementById('connections-layer');
+  if (!svg) return;
+  svg.innerHTML = '';
+
+  STATE.connections.forEach(conn => {
+    const fromEl = document.getElementById(`el-${conn.from}`);
+    const toEl = document.getElementById(`el-${conn.to}`);
+
+    if (fromEl && toEl) {
+      const itemA = STATE.elements[STATE.activeTab].find(i => i.id === conn.from);
+      const itemB = STATE.elements[STATE.activeTab].find(i => i.id === conn.to);
+
+      if (itemA && itemB) {
+        const ax = itemA.x + (fromEl.offsetWidth / 2);
+        const ay = itemA.y + (fromEl.offsetHeight / 2);
+        const bx = itemB.x + (toEl.offsetWidth / 2);
+        const by = itemB.y + (toEl.offsetHeight / 2);
+
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', ax + 50000);
+        line.setAttribute('y1', ay + 50000);
+        line.setAttribute('x2', bx + 50000);
+        line.setAttribute('y2', by + 50000);
+        line.setAttribute('stroke', 'var(--accent)');
+        line.setAttribute('stroke-width', '3');
+        line.setAttribute('stroke-dasharray', '6');
+        svg.appendChild(line);
+      }
+    }
+  });
+}
+
+function renderTabs() {
+  const list = document.getElementById('tab-list');
+  list.innerHTML = '';
+  STATE.tabs.forEach(tab => {
+    const item = document.createElement('div');
+    item.className = `tab-item ${tab.id === STATE.activeTab ? 'active' : ''}`;
+    item.innerHTML = `
+      <span>${tab.name}</span>
+      ${STATE.tabs.length > 1 ? `<span class="del-tab" onclick="deleteTab(event, '${tab.id}')">✕</span>` : ''}
+    `;
+    item.onclick = () => switchTab(tab.id);
+    list.appendChild(item);
+  });
+}
+
+function switchTab(id) {
+  STATE.activeTab = id;
+  if (!STATE.elements[STATE.activeTab]) STATE.elements[STATE.activeTab] = [];
+  clearSelection();
+  renderTabs();
+  renderElements();
+  saveState();
+}
+
+document.getElementById('btn-add-tab').onclick = () => {
+  const name = prompt('Workspace Name:', 'New Tab');
+  if (name) {
+    const id = 'tab_' + Date.now();
+    STATE.tabs.push({ id, name });
+    STATE.elements[id] = [];
+    switchTab(id);
+  }
+};
+
+function deleteTab(e, id) {
+  e.stopPropagation();
+  if (confirm('Delete workspace?')) {
+    STATE.tabs = STATE.tabs.filter(t => t.id !== id);
+    delete STATE.elements[id];
+    if (STATE.activeTab === id) STATE.activeTab = STATE.tabs[0].id;
+    renderTabs();
+    renderElements();
+    saveState();
+  }
+}
+
+function updateStats() {
+  let totalChars = 0;
+  let totalWords = 0;
+
+  (STATE.elements[STATE.activeTab] || []).forEach(el => {
+    let str = '';
+    if (el.text) str += ' ' + el.text;
+    if (el.title) str += ' ' + el.title;
+    if (el.items) str += ' ' + el.items.map(i => i.text).join(' ');
+
+    const clean = str.trim();
+    if (clean) {
+      totalChars += clean.length;
+      totalWords += clean.split(/\s+/).length;
+    }
+  });
+
+  document.getElementById('stat-words').innerText = totalWords;
+  document.getElementById('stat-chars').innerText = totalChars;
+}
+
+document.getElementById('search-input').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase().trim();
+  const currentEls = STATE.elements[STATE.activeTab] || [];
+
+  currentEls.forEach(el => {
+    const node = document.getElementById(`el-${el.id}`);
+    if (!node) return;
+    let match = false;
+    if (q) {
+      if (el.title && el.title.toLowerCase().includes(q)) match = true;
+      if (el.text && el.text.toLowerCase().includes(q)) match = true;
+      if (el.items && el.items.some(i => i.text.toLowerCase().includes(q))) match = true;
+    }
+    if (match) node.classList.add('highlighted');
+    else node.classList.remove('highlighted');
+  });
+});
+
+const ctxMenu = document.getElementById('context-menu');
+window.addEventListener('contextmenu', (e) => {
+  if (e.target.closest('#canvas-container')) {
+    e.preventDefault();
+    ctxMenu.style.display = 'block';
+    ctxMenu.style.left = `${e.clientX}px`;
+    ctxMenu.style.top = `${e.clientY}px`;
+  }
+});
+window.addEventListener('click', () => ctxMenu.style.display = 'none');
+
+document.getElementById('ctx-copy').onclick = () => {
+  const sel = (STATE.elements[STATE.activeTab] || []).filter(i => STATE.selectedIds.has(i.id));
+  if (sel.length) STATE.clipboard = JSON.stringify(sel);
+};
+document.getElementById('ctx-duplicate').onclick = duplicateSelected;
+document.getElementById('ctx-delete').onclick = deleteSelected;
+document.getElementById('ctx-front').onclick = () => setLayer('front');
+document.getElementById('ctx-back').onclick = () => setLayer('back');
+
+window.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+  const key = e.key.toUpperCase();
+  if (key === 'N') createEl('note');
+  if (key === 'T') createEl('text');
+  if (key === 'C' && !e.ctrlKey) createEl('checklist');
+  if (key === 'A' && !e.ctrlKey) createEl('arrow');
+  if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
+
+  if (e.ctrlKey || e.metaKey) {
+    if (key === 'D') { e.preventDefault(); duplicateSelected(); }
+  }
+});
+
+document.getElementById('btn-sticky').onclick = () => createEl('note');
+document.getElementById('btn-text').onclick = () => createEl('text');
+document.getElementById('btn-check').onclick = () => createEl('checklist');
+document.getElementById('btn-arrow').onclick = () => createEl('arrow');
+document.getElementById('btn-frame').onclick = () => createEl('frame');
+document.getElementById('btn-connect').onclick = handleConnectClick;
+
+document.getElementById('btn-present').onclick = () => document.body.classList.add('presentation');
+document.getElementById('btn-exit-present').onclick = () => document.body.classList.remove('presentation');
+
+function setTheme(mode) {
+  STATE.theme = mode;
+  const root = document.documentElement;
+  root.setAttribute('data-theme', mode === 'dark' ? 'dark' : 'light');
+  document.getElementById('btnLight').classList.toggle('active', mode === 'light');
+  document.getElementById('btnDark').classList.toggle('active', mode === 'dark');
+  saveState();
+}
+
+/* Modal logic */
+function openResetModal() {
+  document.getElementById('resetModal').classList.add('active');
+  document.getElementById('confirmInput').value = '';
+  document.getElementById('confirmInput').focus();
+}
+
+function closeResetModal() {
+  document.getElementById('resetModal').classList.remove('active');
+}
+
+function confirmReset() {
+  const input = document.getElementById('confirmInput').value.trim();
+  if (input === 'dase') {
+    localStorage.clear();
+    location.reload();
+  } else {
+    alert('Incorrect password. Type "dase" to confirm.');
+  }
+}
+
+/* Storage Visualizer */
+function updateStorageVisualizer() {
+  let totalBytes = 0;
+  for (let key in localStorage) {
+    if (localStorage.hasOwnProperty(key)) {
+      totalBytes += ((localStorage[key].length + key.length) * 2);
+    }
+  }
+
+  const maxBytes = 5 * 1024 * 1024;
+  const kb = (totalBytes / 1024).toFixed(1);
+  const percentage = Math.min((totalBytes / maxBytes) * 100, 100).toFixed(1);
+
+  document.getElementById('storageText').innerText = `${kb} KB (${percentage}%)`;
+  document.getElementById('storageBar').style.width = `${Math.max(percentage, 2)}%`;
+}
+
+setTheme(STATE.theme);
+renderTabs();
+renderElements();
+pushHistory();
+updateStorageVisualizer();
+</script>
+</body>
+</html>
