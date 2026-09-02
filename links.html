@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔗 dase/links</title>
+<!-- Favicon com Emoji 🔗 -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔗</text></svg>">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F5F6FA;
+    --panel: #FFFFFF;
+    --card: #F5F6FA;
+    --sidebar: #FFFFFF;
+    --text: #14161C;
+    --muted: #767C8C;
+    --accent: #2F5EFF;
+    --accent2: #FF5A3C;
+    --line: #E7E8EF;
+    --bar: #E2E5F5;
+  }
+  [data-theme="dark"] {
+    --bg: #0E0F14;
+    --panel: #14161D;
+    --card: #181A22;
+    --sidebar: #12131A;
+    --text: #F4F5F9;
+    --muted: #8B8FA3;
+    --line: #262834;
+    --bar: #21232D;
+  }
+
+  body {
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    transition: background .25s, color .25s;
+  }
+
+  /* ===== Sidebar ===== */
+  .sidebar {
+    width: 220px;
+    background: var(--sidebar);
+    border-right: 1px solid var(--line);
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  .brand { font-size: 21px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 36px; }
+  .brand span { color: var(--accent); }
+  .nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .nav a {
+    display: flex; align-items: center; gap: 12px;
+    text-decoration: none; color: var(--muted);
+    font-size: 14px; font-weight: 600;
+    padding: 10px 12px; border-radius: 10px;
+  }
+  .nav a .ico { font-size: 16px; width: 18px; text-align: center; }
+  .nav a.active { background: var(--accent); color: #fff; }
+  .nav a:not(.active):hover { background: var(--card); }
+
+  /* Controls at sidebar bottom */
+  .sidebar-footer {
+    display: flex; flex-direction: column; gap: 12px;
+    padding-top: 16px; border-top: 1px solid var(--line);
+  }
+
+  /* Storage Meter Indicator */
+  .storage-indicator {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .storage-header {
+    display: flex;
+    justify-content: space-between;
+  }
+  .storage-bar-track {
+    height: 6px;
+    border-radius: 4px;
+    background: var(--bar);
+    overflow: hidden;
+  }
+  .storage-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+
+  .reset-btn {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--muted);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all .2s ease;
+  }
+  .reset-btn:hover {
+    background: var(--accent2);
+    color: #ffffff;
+    border-color: var(--accent2);
+  }
+
+  .user-box {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .theme-pill-switch {
+    display: flex; align-items: center; background: var(--card);
+    border: 1px solid var(--line); border-radius: 20px; padding: 3px;
+    flex: 1; justify-content: space-between;
+  }
+  .theme-pill-btn {
+    flex: 1; border: none; background: transparent; color: var(--muted);
+    padding: 6px 0; border-radius: 16px; cursor: pointer;
+    font-size: 13px; display: flex; align-items: center; justify-content: center;
+    transition: all .2s ease;
+  }
+  .theme-pill-btn.active {
+    background: var(--sidebar); color: var(--text);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08); font-weight: 700;
+  }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--card); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; text-decoration: none; color: var(--text);
+    font-size: 14px; font-weight: 700; transition: background .2s;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover { background: var(--bar); }
+
+  /* ===== Main ===== */
+  .main { flex: 1; padding: 32px 40px 60px; max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; width: 100%; }
+
+  .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+  .top-row h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; }
+  .top-row .sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  /* Grid Layout for Link Categories */
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 22px;
+  }
+
+  .panel-box { background: var(--card); border-radius: 16px; border: 1px solid var(--line); padding: 22px 24px; }
+  .panel-box h2 { font-size: 14.5px; font-weight: 700; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+
+  /* Activity / Link List */
+  .list-row { display: flex; justify-content: space-between; align-items: center; padding: 13px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  .list-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .list-row:first-child { padding-top: 0; }
+  .list-row .left { display: flex; align-items: center; gap: 12px; }
+  .list-row .ico-box { width: 36px; height: 36px; border-radius: 10px; background: var(--bar); display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+  .list-row .name { font-weight: 600; color: var(--text); }
+  .list-row .sub { color: var(--muted); font-size: 11.5px; }
+  
+  .link-action {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+  }
+  .pill { 
+    background: rgba(47,94,255,.12); 
+    color: var(--accent); 
+    font-size: 11.5px; 
+    font-weight: 700; 
+    padding: 6px 12px; 
+    border-radius: 20px;
+    transition: background 0.2s, color 0.2s;
+  }
+  .list-row:hover .pill {
+    background: var(--accent);
+    color: #ffffff;
+  }
+
+  /* ===== Modal ===== */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 24px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  }
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .modal p { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.4; }
+  .modal input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    font-size: 14px;
+    margin-bottom: 16px;
+    outline: none;
+  }
+  .modal input:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .modal-btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+  }
+  .modal-btn.cancel { background: var(--card); color: var(--text); border: 1px solid var(--line); }
+  .modal-btn.confirm { background: var(--accent2); color: #fff; }
+
+  /* ===== Footer ===== */
+  footer {
+    margin-top: auto;
+    padding-top: 40px;
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .category-grid { grid-template-columns: 1fr; }
+    .main { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="brand">dase<span>/links</span></div>
+  <div class="nav">
+    <a href="#" class="active"><span class="ico">🔗</span> Web Directory</a>
+  </div>
+  <div class="sidebar-footer">
+    <div class="storage-indicator">
+      <div class="storage-header">
+        <span>Storage</span>
+        <span id="storageText">0 KB / 5 MB</span>
+      </div>
+      <div class="storage-bar-track">
+        <div class="storage-bar-fill" id="storageBar"></div>
+      </div>
+    </div>
+
+    <button class="reset-btn" onclick="openResetModal()">↺ Reset Data</button>
+
+    <div class="user-box">
+      <div class="theme-pill-switch">
+        <button class="theme-pill-btn active" id="btnLight" onclick="setTheme('light')" aria-label="Light Mode">☀</button>
+        <button class="theme-pill-btn" id="btnDark" onclick="setTheme('dark')" aria-label="Dark Mode">☾</button>
+      </div>
+      <a href="https://donodaseves.github.io/dase/" class="icon-btn" title="Go to website" target="_blank" rel="noopener">D</a>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="top-row">
+    <div>
+      <h1>Useful Tools Directory</h1>
+      <div class="sub">a curated selection of quick daily utilities</div>
+    </div>
+  </div>
+
+  <div class="category-grid">
+    
+    <!-- Design & Image -->
+    <div class="panel-box">
+      <h2>🎨 Design & Images</h2>
+      
+      <div class="list-row">
+        <div class="left">
+          <div class="ico-box">✂️</div>
+          <div>
+            <div class="name">Remove.bg</div>
+            <div class="sub">Remove image backgrounds automatically</div>
+          </div>
+        </div>
+        <a href="https://www.remove.bg/" target="_blank" rel="noopener" class="link-action">
+          <span class="pill">Visit ↗</span>
+        </a>
+      </div>
+
+      <div class="list-row">
+        <div class="left">
+          <div class="ico-box">🐼</div>
+          <div>
+            <div class="name">TinyPNG</div>
+            <div class="sub">Compress WebP, PNG, and JPEG images while preserving quality</div>
+          </div>
+        </div>
+        <a href="https://tinypng.com/" target="_blank" rel="noopener" class="link-action">
+          <span class="pill">Visit ↗</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Network & Diagnostics -->
+    <div class="panel-box">
+      <h2>🌐 Network & Diagnostics</h2>
+
+      <div class="list-row">
+        <div class="left">
+          <div class="ico-box">🔎</div>
+          <div>
+            <div class="name">Who.is</div>
+            <div class="sub">Look up domain ownership and registration records</div>
+          </div>
+        </div>
+        <a href="https://who.is/" target="_blank" rel="noopener" class="link-action">
+          <span class="pill">Visit ↗</span>
+        </a>
+      </div>
+
+      <div class="list-row">
+        <div class="left">
+          <div class="ico-box">⚡</div>
+          <div>
+            <div class="name">Fast.com</div>
+            <div class="sub">Simple and direct internet speed test</div>
+          </div>
+        </div>
+        <a href="https://fast.com/" target="_blank" rel="noopener" class="link-action">
+          <span class="pill">Visit ↗</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Privacy & Utilities -->
+    <div class="panel-box">
+      <h2>🔒 Privacy & Utilities</h2>
+
+      <div class="list-row">
+        <div class="left">
+          <div class="ico-box">✉️</div>
+          <div>
+            <div class="name">Temp Mail</div>
+            <div class="sub">Temporary and disposable email for testing and signups</div>
+          </div>
+        </div>
+        <a href="https://temp-mail.org/" target="_blank" rel="noopener" class="link-action">
+          <span class="pill">Visit ↗</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Projects & Useful Links -->
+    <div class="panel-box">
+      <h2>🚀 Projects & Useful Links</h2>
+
+      <div class="list-row">
+        <div class="left">
+          <div class="ico-box">⚡</div>
+          <div>
+            <div class="name">Dase Project</div>
+            <div class="sub">Main page for the Donodaseves project on GitHub</div>
+          </div>
+        </div>
+        <a href="https://donodaseves.github.io/dase/" target="_blank" rel="noopener" class="link-action">
+          <span class="pill">Visit ↗</span>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    Personal project, built with AI assistance. No support or bug fixes provided.
+  </footer>
+
+</div>
+
+<div class="modal-overlay" id="resetModal">
+  <div class="modal">
+    <h3>Reset LocalStorage</h3>
+    <p>Type <strong>"dase"</strong> below to confirm deleting all local data.</p>
+    <input type="text" id="confirmInput" placeholder="dase" autocomplete="off" />
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeResetModal()">Cancel</button>
+      <button class="modal-btn confirm" onclick="confirmReset()">Delete All</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function setTheme(mode) {
+  const root = document.documentElement;
+  root.setAttribute('data-theme', mode === 'dark' ? 'dark' : 'light');
+  document.getElementById('btnLight').classList.toggle('active', mode === 'light');
+  document.getElementById('btnDark').classList.toggle('active', mode === 'dark');
+}
+
+/* Modal logic */
+function openResetModal() {
+  document.getElementById('resetModal').classList.add('active');
+  document.getElementById('confirmInput').value = '';
+  document.getElementById('confirmInput').focus();
+}
+
+function closeResetModal() {
+  document.getElementById('resetModal').classList.remove('active');
+}
+
+function confirmReset() {
+  const input = document.getElementById('confirmInput').value.trim();
+  if (input === 'dase') {
+    localStorage.clear();
+    location.reload();
+  } else {
+    alert('Incorrect password. Type "dase" to confirm.');
+  }
+}
+
+/* Storage Visualizer */
+function updateStorageVisualizer() {
+  let totalBytes = 0;
+  for (let key in localStorage) {
+    if (localStorage.hasOwnProperty(key)) {
+      totalBytes += ((localStorage[key].length + key.length) * 2); // 2 bytes per character (UTF-16)
+    }
+  }
+
+  const maxBytes = 5 * 1024 * 1024; // ~5MB (Standard browser limit)
+  const kb = (totalBytes / 1024).toFixed(1);
+  const percentage = Math.min((totalBytes / maxBytes) * 100, 100).toFixed(1);
+
+  document.getElementById('storageText').innerText = `${kb} KB (${percentage}%)`;
+  document.getElementById('storageBar').style.width = `${Math.max(percentage, 2)}%`;
+}
+
+// Initialize storage visualizer on page load
+updateStorageVisualizer();
+</script>
+
+</body>
+</html>
