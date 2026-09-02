@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dase/ — Text Editor</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F5F6FA;
+    --panel: #FFFFFF;
+    --card: #F5F6FA;
+    --sidebar: #FFFFFF;
+    --text: #14161C;
+    --muted: #767C8C;
+    --accent: #2F5EFF;
+    --accent2: #FF5A3C;
+    --line: #E7E8EF;
+    --bar: #E2E5F5;
+  }
+  [data-theme="dark"] {
+    --bg: #0E0F14;
+    --panel: #14161D;
+    --card: #181A22;
+    --sidebar: #12131A;
+    --text: #F4F5F9;
+    --muted: #8B8FA3;
+    --line: #262834;
+    --bar: #21232D;
+  }
+
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    transition: background .25s, color .25s;
+  }
+
+  /* ===== Sidebar ===== */
+  .sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--sidebar);
+    border-right: 1px solid var(--line);
+    padding: 26px 20px;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  .brand { font-size: 21px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px; }
+  .brand span { color: var(--accent); }
+  .brand-sub { font-size: 11.5px; color: var(--muted); font-weight: 600; margin-bottom: 22px; }
+
+  .tools-scroll {
+    flex: 1;
+    overflow-y: auto;
+    margin-right: -8px;
+    padding-right: 8px;
+  }
+  .tools-scroll::-webkit-scrollbar { width: 6px; }
+  .tools-scroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+
+  details.tool-group {
+    border-bottom: 1px solid var(--line);
+    padding: 12px 0;
+  }
+  details.tool-group:first-child { padding-top: 0; }
+  details.tool-group summary {
+    cursor: pointer;
+    font-size: 12.5px;
+    font-weight: 700;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text);
+  }
+  details.tool-group summary::-webkit-details-marker { display: none; }
+  details.tool-group summary::after {
+    content: '+';
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 15px;
+  }
+  details.tool-group[open] summary::after { content: '−'; }
+  .tool-body { padding-top: 12px; }
+
+  .tool-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .tool-btns.single { grid-template-columns: 1fr; }
+  .tool-btn {
+    padding: 8px 8px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--card);
+    color: var(--text);
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all .15s ease;
+    line-height: 1.3;
+  }
+  .tool-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .tool-btn.wide { grid-column: 1 / -1; }
+
+  .tool-input {
+    width: 100%;
+    padding: 7px 9px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 12px;
+    margin-bottom: 6px;
+    outline: none;
+    font-family: inherit;
+  }
+  .tool-input:focus { border-color: var(--accent); }
+
+  .drafts-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; max-height: 220px; overflow-y: auto; }
+  .draft-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 9px; border-radius: 8px; background: var(--card);
+    border: 1px solid var(--line); font-size: 11.5px; gap: 6px;
+  }
+  .draft-item .draft-info { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; flex: 1; }
+  .draft-item .draft-time { font-weight: 700; color: var(--accent); margin-right: 6px; }
+  .draft-item .draft-del { cursor: pointer; color: var(--muted); font-weight: 700; padding: 0 4px; flex-shrink: 0; }
+  .draft-item .draft-del:hover { color: var(--accent2); }
+  .drafts-empty { font-size: 11.5px; color: var(--muted); padding: 4px 0; }
+
+  /* Controls at sidebar bottom */
+  .sidebar-footer {
+    display: flex; flex-direction: column; gap: 12px;
+    padding-top: 16px; border-top: 1px solid var(--line);
+  }
+
+  .storage-indicator { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; color: var(--muted); font-weight: 600; }
+  .storage-header { display: flex; justify-content: space-between; }
+  .storage-bar-track { height: 6px; border-radius: 4px; background: var(--bar); overflow: hidden; }
+  .storage-bar-fill { height: 100%; width: 0%; background: var(--accent); border-radius: 4px; transition: width 0.3s ease; }
+  .storage-bar-fill.warn { background: var(--accent2); }
+
+  .reset-btn {
+    width: 100%; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--card); color: var(--muted); font-size: 12.5px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: all .2s ease;
+  }
+  .reset-btn:hover { background: var(--accent2); color: #ffffff; border-color: var(--accent2); }
+
+  .user-box { display: flex; align-items: center; gap: 10px; }
+  .theme-pill-switch {
+    display: flex; align-items: center; background: var(--card);
+    border: 1px solid var(--line); border-radius: 20px; padding: 3px;
+    flex: 1; justify-content: space-between;
+  }
+  .theme-pill-btn {
+    flex: 1; border: none; background: transparent; color: var(--muted);
+    padding: 6px 0; border-radius: 16px; cursor: pointer;
+    font-size: 13px; display: flex; align-items: center; justify-content: center;
+    transition: all .2s ease;
+  }
+  .theme-pill-btn.active { background: var(--sidebar); color: var(--text); box-shadow: 0 2px 6px rgba(0,0,0,0.08); font-weight: 700; }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--card); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; text-decoration: none; color: var(--text);
+    font-size: 14px; font-weight: 700; transition: background .2s;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover { background: var(--bar); }
+
+  /* ===== Main ===== */
+  .main { flex: 1; padding: 30px 40px 40px; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; min-width: 0; }
+
+  .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
+  .top-row h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; }
+  .top-row .sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  /* Stat grid */
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px; }
+  .card { background: var(--card); border-radius: 14px; padding: 16px 18px; border: 1px solid var(--line); }
+  .card .lbl { font-size: 11.5px; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+  .card .val { font-size: 22px; font-weight: 800; }
+
+  /* Social limits panel */
+  .panel-box { background: var(--card); border-radius: 16px; border: 1px solid var(--line); padding: 20px 22px; margin-bottom: 16px; }
+  .panel-box h2 { font-size: 14px; font-weight: 700; margin-bottom: 16px; }
+  .panel-box h2 .muted { color: var(--muted); font-weight: 500; font-size: 12px; margin-left: 6px; }
+
+  .limits-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .goal { }
+  .goal-top { display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 7px; }
+  .goal-top .name { font-weight: 600; }
+  .goal-top .amount { color: var(--muted); font-weight: 600; }
+  .goal-top .amount.over { color: var(--accent2); }
+  .goal-track { height: 8px; border-radius: 6px; background: var(--bar); overflow: hidden; }
+  .goal-fill { height: 100%; border-radius: 6px; background: var(--accent); transition: width .2s ease; }
+  .goal-fill.over { background: var(--accent2); }
+
+  /* Editor */
+  .editor-toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .editor-toolbar button {
+    padding: 9px 16px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--card); color: var(--text); font-size: 12.5px; font-weight: 700;
+    cursor: pointer; transition: all .15s ease; display: flex; align-items: center; gap: 6px;
+  }
+  .editor-toolbar button:hover { background: var(--bar); }
+  .editor-toolbar button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .editor-toolbar button.primary:hover { opacity: .9; }
+  .editor-toolbar button.danger:hover { background: var(--accent2); color: #fff; border-color: var(--accent2); }
+
+  .editor-wrap { flex: 1; display: flex; flex-direction: column; margin-bottom: 8px; }
+  textarea#editor {
+    flex: 1;
+    min-height: 480px;
+    width: 100%;
+    resize: vertical;
+    padding: 22px;
+    border-radius: 18px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.65;
+    font-family: inherit;
+    outline: none;
+    transition: border-color .15s ease;
+  }
+  textarea#editor:focus { border-color: var(--accent); }
+  textarea#editor::placeholder { color: var(--muted); }
+
+  /* ===== Modal ===== */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+  }
+  .modal-overlay.active { opacity: 1; pointer-events: auto; }
+  .modal {
+    background: var(--panel); border-radius: 18px; padding: 28px; width: 360px;
+    max-width: 90vw; border: 1px solid var(--line);
+  }
+  .modal h3 { font-size: 16px; font-weight: 800; margin-bottom: 10px; }
+  .modal p { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+  .modal input {
+    width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--card); color: var(--text); font-size: 14px; margin-bottom: 16px; outline: none;
+  }
+  .modal input:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .modal-btn { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; }
+  .modal-btn.cancel { background: var(--card); color: var(--text); border: 1px solid var(--line); }
+  .modal-btn.confirm { background: var(--accent2); color: #fff; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 26px; right: 26px; background: var(--text); color: var(--bg);
+    padding: 11px 20px; border-radius: 10px; font-size: 13px; font-weight: 700;
+    opacity: 0; transform: translateY(10px); transition: all .25s ease; pointer-events: none; z-index: 2000;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  footer { margin-top: 24px; text-align: center; font-size: 12px; color: var(--muted); }
+
+  @media (max-width: 980px) {
+    .sidebar { display: none; }
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .limits-row { grid-template-columns: 1fr; }
+    .main { padding: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="brand">dase<span>/text</span></div>
+  <div class="brand-sub">Text Editor</div>
+
+  <div class="tools-scroll">
+
+    <details class="tool-group" open>
+      <summary>Drafts</summary>
+      <div class="tool-body">
+        <div class="tool-btns single">
+          <button class="tool-btn" onclick="saveDraft()">💾 Save current draft</button>
+        </div>
+        <div class="drafts-list" id="draftsList"></div>
+      </div>
+    </details>
+
+    <details class="tool-group">
+      <summary>Cleanup &amp; Capitalization</summary>
+      <div class="tool-body">
+        <div class="tool-btns">
+          <button class="tool-btn" onclick="applyTransform(t => t.toUpperCase())">UPPERCASE</button>
+          <button class="tool-btn" onclick="applyTransform(t => t.toLowerCase())">lowercase</button>
+          <button class="tool-btn" onclick="applyTransform(toTitleCase)">Title Case</button>
+          <button class="tool-btn" onclick="applyTransform(toAlternado)">aLtErNaTiNg</button>
+          <button class="tool-btn wide" onclick="applyTransform(removeBlankLines)">Remove blank lines</button>
+          <button class="tool-btn wide" onclick="applyTransform(removeDupSpaces)">Remove duplicate spaces/tabs</button>
+          <button class="tool-btn wide" onclick="applyTransform(removeLineBreaks)">Remove line breaks</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="tool-group">
+      <summary>Lists &amp; Sorting</summary>
+      <div class="tool-body">
+        <div class="tool-btns">
+          <button class="tool-btn" onclick="applyTransform(sortLinesAZ)">Sort A-Z</button>
+          <button class="tool-btn" onclick="applyTransform(sortLinesZA)">Sort Z-A</button>
+          <button class="tool-btn" onclick="applyTransform(sortByLength)">By length</button>
+          <button class="tool-btn" onclick="applyTransform(removeDupLines)">Remove duplicates</button>
+        </div>
+        <div style="margin-top:10px;">
+          <input type="text" id="prefixInput" class="tool-input" placeholder="Prefix (optional)">
+          <input type="text" id="suffixInput" class="tool-input" placeholder="Suffix (optional)">
+          <div class="tool-btns single"><button class="tool-btn" onclick="applyPrefixSuffix()">Apply prefix/suffix</button></div>
+        </div>
+      </div>
+    </details>
+
+    <details class="tool-group">
+      <summary>Styles, Markdown &amp; Unicode</summary>
+      <div class="tool-body">
+        <div class="tool-btns">
+          <button class="tool-btn" onclick="wrapSelection('**','**')">**bold**</button>
+          <button class="tool-btn" onclick="wrapSelection('*','*')">*italic*</button>
+          <button class="tool-btn" onclick="wrapSelection('~~','~~')">~~strikethrough~~</button>
+          <button class="tool-btn" onclick="wrapSelection('\`','\`')">\`code\`</button>
+          <button class="tool-btn wide" onclick="applyUnicodeStyle('bold')">𝐅𝐀-Bold</button>
+          <button class="tool-btn wide" onclick="applyUnicodeStyle('italic')">𝐹𝐴-Italic</button>
+          <button class="tool-btn wide" onclick="applyUnicodeStyle('fraktur')">𝔉𝔞-Gothic</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="tool-group">
+      <summary>Find &amp; Encoders</summary>
+      <div class="tool-body">
+        <input type="text" id="findInput" class="tool-input" placeholder="Find...">
+        <input type="text" id="replaceInput" class="tool-input" placeholder="Replace with...">
+        <div class="tool-btns single"><button class="tool-btn" onclick="applyFindReplace()">Find and Replace</button></div>
+        <div class="tool-btns" style="margin-top:10px;">
+          <button class="tool-btn" onclick="applyTransform(t => encodeURIComponent(t))">URL Encode</button>
+          <button class="tool-btn" onclick="applyTransform(urlDecodeSafe)">URL Decode</button>
+          <button class="tool-btn" onclick="applyTransform(utf8ToBase64)">Base64 Encode</button>
+          <button class="tool-btn" onclick="applyTransform(base64ToUtf8Safe)">Base64 Decode</button>
+          <button class="tool-btn wide" onclick="applyTransform(toHtmlEntities)">HTML Entities</button>
+        </div>
+      </div>
+    </details>
+
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="storage-indicator">
+      <div class="storage-header">
+        <span>Storage</span>
+        <span id="storageText">0 KB (0%)</span>
+      </div>
+      <div class="storage-bar-track">
+        <div class="storage-bar-fill" id="storageBar"></div>
+      </div>
+    </div>
+
+    <button class="reset-btn" onclick="openResetModal()">↺ Reset Data</button>
+
+    <div class="user-box">
+      <div class="theme-pill-switch">
+        <button class="theme-pill-btn active" id="btnLight" onclick="setTheme('light')" aria-label="Light Mode">☀</button>
+        <button class="theme-pill-btn" id="btnDark" onclick="setTheme('dark')" aria-label="Dark Mode">☾</button>
+      </div>
+      <a href="#" class="icon-btn" title="dase/">D</a>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="top-row">
+    <div>
+      <h1>Text Editor</h1>
+      <div class="sub">Processing, editing, and analysis — 100% local in your browser</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card"><div class="lbl">CHARACTERS</div><div class="val" id="statChars">0</div></div>
+    <div class="card"><div class="lbl">NO SPACES</div><div class="val" id="statCharsNoSpace">0</div></div>
+    <div class="card"><div class="lbl">WORDS</div><div class="val" id="statWords">0</div></div>
+    <div class="card"><div class="lbl">LINES / PARAGRAPHS</div><div class="val" id="statLines">0 / 0</div></div>
+  </div>
+
+  <div class="panel-box">
+    <h2>Social Media Limits</h2>
+    <div class="limits-row">
+      <div class="goal">
+        <div class="goal-top"><span class="name">X / Twitter</span><span class="amount" id="xAmount">0 / 280</span></div>
+        <div class="goal-track"><div class="goal-fill" id="xBar" style="width:0%"></div></div>
+      </div>
+      <div class="goal">
+        <div class="goal-top"><span class="name">Instagram Bio</span><span class="amount" id="igBioAmount">0 / 150</span></div>
+        <div class="goal-track"><div class="goal-fill" id="igBioBar" style="width:0%"></div></div>
+      </div>
+      <div class="goal">
+        <div class="goal-top"><span class="name">Instagram Post</span><span class="amount" id="igPostAmount">0 / 2200</span></div>
+        <div class="goal-track"><div class="goal-fill" id="igPostBar" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="editor-toolbar">
+    <button class="primary" onclick="copyAll()">⧉ Copy All</button>
+    <button onclick="cleanFormatting()">✦ Clean Formatting</button>
+    <button class="danger" onclick="clearEditor()">✕ Clear Editor</button>
+  </div>
+
+  <div class="editor-wrap">
+    <textarea id="editor" placeholder="Write or paste your text here..." oninput="onEditorChange()"></textarea>
+  </div>
+
+  <footer>Personal project, built with AI assistance. No support or bug fixes provided.</footer>
+</div>
+
+<div class="modal-overlay" id="resetModal">
+  <div class="modal">
+    <h3>Reset LocalStorage</h3>
+    <p>Type <strong>"dase"</strong> below to confirm the deletion of all local data (text, drafts, and preferences).</p>
+    <input type="text" id="confirmInput" placeholder="dase" autocomplete="off">
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeResetModal()">Cancel</button>
+      <button class="modal-btn confirm" onclick="confirmReset()">Delete All</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== Constants ===================== */
+const LS_TEXT = 'dase_text';
+const LS_THEME = 'dase_theme';
+const LS_DRAFTS = 'dase_drafts';
+const MAX_DRAFTS = 10;
+
+const editor = document.getElementById('editor');
+
+/* ===================== Theme ===================== */
+function setTheme(mode) {
+  const root = document.documentElement;
+  root.setAttribute('data-theme', mode === 'dark' ? 'dark' : 'light');
+  document.getElementById('btnLight').classList.toggle('active', mode === 'light');
+  document.getElementById('btnDark').classList.toggle('active', mode === 'dark');
+  localStorage.setItem(LS_THEME, mode);
+  updateStorageVisualizer();
+}
+
+/* ===================== Toast ===================== */
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ===================== Reset Modal ===================== */
+function openResetModal() {
+  document.getElementById('resetModal').classList.add('active');
+  document.getElementById('confirmInput').value = '';
+  document.getElementById('confirmInput').focus();
+}
+function closeResetModal() {
+  document.getElementById('resetModal').classList.remove('active');
+}
+function confirmReset() {
+  const input = document.getElementById('confirmInput').value.trim();
+  if (input === 'dase') {
+    localStorage.clear();
+    location.reload();
+  } else {
+    showToast('Incorrect word. Type "dase" to confirm.');
+  }
+}
+
+/* ===================== Storage Visualizer ===================== */
+function updateStorageVisualizer() {
+  let totalBytes = 0;
+  for (let key in localStorage) {
+    if (localStorage.hasOwnProperty(key)) {
+      totalBytes += ((localStorage[key].length + key.length) * 2);
+    }
+  }
+  const maxBytes = 5 * 1024 * 1024;
+  const kb = (totalBytes / 1024).toFixed(1);
+  const percentage = Math.min((totalBytes / maxBytes) * 100, 100).toFixed(1);
+
+  document.getElementById('storageText').innerText = `${kb} KB (${percentage}%)`;
+  const bar = document.getElementById('storageBar');
+  bar.style.width = `${Math.max(percentage, 2)}%`;
+  bar.classList.toggle('warn', percentage > 80);
+}
+
+/* ===================== Auto-save & Stats ===================== */
+function onEditorChange() {
+  localStorage.setItem(LS_TEXT, editor.value);
+  updateStats();
+  updateSocialLimits();
+  updateStorageVisualizer();
+}
+
+function updateStats() {
+  const text = editor.value;
+  const charsWithSpaces = text.length;
+  const charsNoSpaces = text.replace(/\s/g, '').length;
+  const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+  const lines = text === '' ? 0 : text.split('\n').length;
+  const paragraphs = text.trim() === '' ? 0 : text.split(/\n\s*\n/).map(p => p.trim()).filter(p => p !== '').length;
+
+  document.getElementById('statChars').textContent = charsWithSpaces;
+  document.getElementById('statCharsNoSpace').textContent = charsNoSpaces;
+  document.getElementById('statWords').textContent = words;
+  document.getElementById('statLines').textContent = `${lines} / ${paragraphs}`;
+}
+
+function updateSocialLimits() {
+  const len = editor.value.length;
+  setLimit('x', len, 280);
+  setLimit('igBio', len, 150);
+  setLimit('igPost', len, 2200);
+}
+function setLimit(prefix, len, limit) {
+  const over = len > limit;
+  const pct = Math.min((len / limit) * 100, 100);
+  document.getElementById(prefix + 'Amount').textContent = `${len} / ${limit}`;
+  document.getElementById(prefix + 'Amount').classList.toggle('over', over);
+  const bar = document.getElementById(prefix + 'Bar');
+  bar.style.width = pct + '%';
+  bar.classList.toggle('over', over);
+}
+
+/* ===================== Drafts ===================== */
+function getDrafts() {
+  try { return JSON.parse(localStorage.getItem(LS_DRAFTS)) || []; }
+  catch (e) { return []; }
+}
+function saveDraftsList(drafts) {
+  localStorage.setItem(LS_DRAFTS, JSON.stringify(drafts));
+  updateStorageVisualizer();
+}
+function saveDraft() {
+  if (editor.value.trim() === '') { showToast('Nothing to save.'); return; }
+  const now = new Date();
+  const time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  const drafts = getDrafts();
+  drafts.unshift({ time, text: editor.value });
+  while (drafts.length > MAX_DRAFTS) drafts.pop();
+  saveDraftsList(drafts);
+  renderDrafts();
+  showToast('Draft saved at ' + time);
+}
+function loadDraft(index) {
+  const drafts = getDrafts();
+  if (!drafts[index]) return;
+  editor.value = drafts[index].text;
+  onEditorChange();
+  showToast('Draft loaded.');
+}
+function deleteDraft(index, ev) {
+  ev.stopPropagation();
+  const drafts = getDrafts();
+  drafts.splice(index, 1);
+  saveDraftsList(drafts);
+  renderDrafts();
+}
+function renderDrafts() {
+  const drafts = getDrafts();
+  const list = document.getElementById('draftsList');
+  if (drafts.length === 0) {
+    list.innerHTML = '<div class="drafts-empty">No saved drafts.</div>';
+    return;
+  }
+  list.innerHTML = drafts.map((d, i) => {
+    const preview = d.text.replace(/\n/g, ' ').slice(0, 24) || '(empty)';
+    return `<div class="draft-item">
+      <div class="draft-info" onclick="loadDraft(${i})"><span class="draft-time">${d.time}</span>${escapeHtml(preview)}</div>
+      <span class="draft-del" onclick="deleteDraft(${i}, event)" title="Delete">✕</span>
+    </div>`;
+  }).join('');
+}
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/* ===================== Editor Actions ===================== */
+function copyAll() {
+  navigator.clipboard.writeText(editor.value).then(() => {
+    showToast('Copied to clipboard!');
+  }).catch(() => {
+    showToast('Unable to copy.');
+  });
+}
+function clearEditor() {
+  editor.value = '';
+  onEditorChange();
+  showToast('Editor cleared.');
+}
+function cleanFormatting() {
+  let t = editor.value;
+  t = t.replace(/\r\n/g, '\n');
+  t = t.replace(/[\u200B-\u200D\uFEFF]/g, '');
+  editor.value = t;
+  onEditorChange();
+  showToast('Formatting cleared.');
+}
+
+/* ===================== Generic Transformations ===================== */
+function applyTransform(fn) {
+  editor.value = fn(editor.value);
+  onEditorChange();
+}
+
+/* -- Capitalization -- */
+function toTitleCase(t) {
+  return t.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.substr(1).toLowerCase());
+}
+function toAlternado(t) {
+  let toggle = false;
+  return t.split('').map(c => {
+    if (/[a-zA-Z]/.test(c)) {
+      const r = toggle ? c.toLowerCase() : c.toUpperCase();
+      toggle = !toggle;
+      return r;
+    }
+    return c;
+  }).join('');
+}
+
+/* -- Cleanup -- */
+function removeBlankLines(t) {
+  return t.split('\n').filter(l => l.trim() !== '').join('\n');
+}
+function removeDupSpaces(t) {
+  return t.replace(/[ \t]{2,}/g, ' ');
+}
+function removeLineBreaks(t) {
+  return t.split('\n').map(l => l.trim()).filter(l => l !== '').join(' ');
+}
+
+/* -- Lists & Sorting -- */
+function sortLinesAZ(t) {
+  return t.split('\n').sort((a, b) => a.localeCompare(b)).join('\n');
+}
+function sortLinesZA(t) {
+  return t.split('\n').sort((a, b) => b.localeCompare(a)).join('\n');
+}
+function sortByLength(t) {
+  return t.split('\n').sort((a, b) => a.length - b.length).join('\n');
+}
+function removeDupLines(t) {
+  const seen = new Set();
+  const out = [];
+  t.split('\n').forEach(l => {
+    if (!seen.has(l)) { seen.add(l); out.push(l); }
+  });
+  return out.join('\n');
+}
+function applyPrefixSuffix() {
+  const prefix = document.getElementById('prefixInput').value;
+  const suffix = document.getElementById('suffixInput').value;
+  if (!prefix && !suffix) { showToast('Set a prefix or suffix.'); return; }
+  applyTransform(t => t.split('\n').map(l => prefix + l + suffix).join('\n'));
+  showToast('Prefix/suffix applied.');
+}
+
+/* -- Find and Replace -- */
+function applyFindReplace() {
+  const find = document.getElementById('findInput').value;
+  const replace = document.getElementById('replaceInput').value;
+  if (!find) { showToast('Specify the term to find.'); return; }
+  applyTransform(t => t.split(find).join(replace));
+  showToast('Replacement completed.');
+}
+
+/* -- Encoders -- */
+function urlDecodeSafe(t) {
+  try { return decodeURIComponent(t); }
+  catch (e) { showToast('Invalid text for URL Decode.'); return t; }
+}
+function utf8ToBase64(t) {
+  try {
+    const bytes = new TextEncoder().encode(t);
+    let binary = '';
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  } catch (e) { showToast('Error encoding Base64.'); return t; }
+}
+function base64ToUtf8Safe(t) {
+  try {
+    const binary = atob(t.trim());
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  } catch (e) { showToast('Invalid text for Base64 Decode.'); return t; }
+}
+function toHtmlEntities(t) {
+  return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+           .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/* ===================== Markdown & Unicode (selection-based) ===================== */
+function wrapSelection(before, after) {
+  const start = editor.selectionStart;
+  const end = editor.selectionEnd;
+  const val = editor.value;
+  if (start === end) {
+    editor.value = before + val + after;
+  } else {
+    editor.value = val.substring(0, start) + before + val.substring(start, end) + after + val.substring(end);
+  }
+  onEditorChange();
+}
+
+const FRAKTUR_EXCEPTIONS_UPPER = { C: 0x212D, H: 0x210C, I: 0x2111, R: 0x211C, Z: 0x2128 };
+function styleChar(c, style) {
+  const code = c.charCodeAt(0);
+  if (style === 'bold') {
+    if (c >= 'A' && c <= 'Z') return String.fromCodePoint(0x1D400 + (code - 65));
+    if (c >= 'a' && c <= 'z') return String.fromCodePoint(0x1D41A + (code - 97));
+    if (c >= '0' && c <= '9') return String.fromCodePoint(0x1D7CE + (code - 48));
+    return c;
+  }
+  if (style === 'italic') {
+    if (c === 'h') return String.fromCodePoint(0x210E);
+    if (c >= 'A' && c <= 'Z') return String.fromCodePoint(0x1D434 + (code - 65));
+    if (c >= 'a' && c <= 'z') return String.fromCodePoint(0x1D44E + (code - 97));
+    return c;
+  }
+  if (style === 'fraktur') {
+    if (c >= 'A' && c <= 'Z') {
+      if (FRAKTUR_EXCEPTIONS_UPPER[c]) return String.fromCodePoint(FRAKTUR_EXCEPTIONS_UPPER[c]);
+      return String.fromCodePoint(0x1D504 + (code - 65));
+    }
+    if (c >= 'a' && c <= 'z') return String.fromCodePoint(0x1D51E + (code - 97));
+    return c;
+  }
+  return c;
+}
+function styleText(t, style) {
+  return t.split('').map(c => styleChar(c, style)).join('');
+}
+function applyUnicodeStyle(style) {
+  const start = editor.selectionStart;
+  const end = editor.selectionEnd;
+  const val = editor.value;
+  if (start === end) {
+    editor.value = styleText(val, style);
+  } else {
+    editor.value = val.substring(0, start) + styleText(val.substring(start, end), style) + val.substring(end);
+  }
+  onEditorChange();
+}
+
+/* ===================== Initialization ===================== */
+function init() {
+  const savedTheme = localStorage.getItem(LS_THEME) || 'light';
+  setTheme(savedTheme);
+
+  const savedText = localStorage.getItem(LS_TEXT);
+  if (savedText !== null) editor.value = savedText;
+
+  updateStats();
+  updateSocialLimits();
+  updateStorageVisualizer();
+  renderDrafts();
+}
+init();
+</script>
+
+</body>
+</html>
