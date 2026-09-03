@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dase/hub — Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace;
+    --sans: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    --dur: 200ms;
+    --radius: 14px;
+
+    --bg: #F5F6FA;
+    --panel: #FFFFFF;
+    --surface: #FFFFFF;
+    --surface-alt: #F5F6FA;
+    --card: #F5F6FA;
+    --sidebar: #FFFFFF;
+    --text: #14161C;
+    --text-muted: #767C8C;
+    --text-faint: #767C8C;
+    --muted: #767C8C;
+    --border: #E7E8EF;
+    --border-soft: #E7E8EF;
+    --line: #E7E8EF;
+    --primary: #2F5EFF;
+    --accent: #2F5EFF;
+    --focus: #2F5EFF;
+    --danger: #FF5A3C;
+    --accent2: #FF5A3C;
+    --bar: #E2E5F5;
+    --shadow: 0 8px 24px rgba(20,20,20,0.06);
+  }
+
+  html[data-theme="dark"] {
+    --bg: #0E0F14;
+    --panel: #14161D;
+    --surface: #14161D;
+    --surface-alt: #181A22;
+    --card: #181A22;
+    --sidebar: #12131A;
+    --text: #F4F5F9;
+    --text-muted: #8B8FA3;
+    --text-faint: #8B8FA3;
+    --muted: #8B8FA3;
+    --border: #262834;
+    --border-soft: #262834;
+    --line: #262834;
+    --bar: #21232D;
+    --shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    transition: background .25s, color .25s;
+  }
+
+  a { color: inherit; text-decoration: none; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  /* ===== Sidebar ===== */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--sidebar);
+    border-right: 1px solid var(--line);
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .brand { font-size: 21px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 36px; }
+  .brand span { color: var(--accent); }
+
+  .nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    text-decoration: none; color: var(--muted);
+    font-family: var(--sans); font-size: 14px; font-weight: 600;
+    padding: 10px 12px; border-radius: 10px;
+    border: none; background: transparent; cursor: pointer;
+    width: 100%; text-align: left;
+  }
+  .nav-item .ico {
+    font-size: 16px; width: 18px; text-align: center;
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .nav-item[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  .nav-item:not([aria-pressed="true"]):hover { background: var(--card); color: var(--text); }
+
+  .sidebar-item { position: relative; }
+  .side-flyout {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    z-index: 250;
+  }
+  .side-flyout.open { display: flex; }
+
+  .more-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px;
+    font-family: var(--sans); font-size: 13px; font-weight: 600;
+    color: var(--muted);
+    background: transparent; border: none; text-align: left;
+    cursor: pointer; width: 100%;
+  }
+  .more-item:hover { background: var(--card); color: var(--text); }
+  .more-item.danger { color: var(--accent2); }
+  .more-item.danger:hover { background: var(--accent2); color: #fff; }
+
+  /* Controls at sidebar bottom */
+  .sidebar-footer {
+    display: flex; flex-direction: column; gap: 12px;
+    padding-top: 16px; border-top: 1px solid var(--line);
+  }
+
+  .storage-indicator {
+    display: flex; flex-direction: column; gap: 4px;
+    font-size: 11.5px; color: var(--muted); font-weight: 600;
+  }
+  .storage-header { display: flex; justify-content: space-between; }
+  .storage-bar-track { height: 6px; border-radius: 4px; background: var(--bar); overflow: hidden; }
+  .storage-bar-fill { height: 100%; width: 0%; background: var(--accent); border-radius: 4px; transition: width .3s ease; }
+
+  .reset-btn {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: all .2s ease;
+  }
+  .reset-btn:hover { background: var(--accent2); color: #fff; border-color: var(--accent2); }
+
+  .user-box { display: flex; align-items: center; gap: 10px; }
+  .theme-pill-switch {
+    display: flex; align-items: center; background: var(--card);
+    border: 1px solid var(--line); border-radius: 20px; padding: 3px;
+    flex: 1; justify-content: space-between;
+  }
+  .theme-pill-btn {
+    flex: 1; border: none; background: transparent; color: var(--muted);
+    padding: 6px 0; border-radius: 16px; cursor: pointer;
+    font-size: 13px; display: flex; align-items: center; justify-content: center;
+    transition: all .2s ease;
+  }
+  .theme-pill-btn.active {
+    background: var(--sidebar); color: var(--text);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08); font-weight: 700;
+  }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--card); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; text-decoration: none; color: var(--text);
+    font-size: 14px; font-weight: 700; transition: background .2s;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover { background: var(--bar); }
+
+  /* ===== Main ===== */
+  .main {
+    flex: 1; min-width: 0;
+    padding: 32px 40px 60px;
+    max-width: 1100px; margin: 0 auto;
+    display: flex; flex-direction: column;
+  }
+  .wrap { width: 100%; display: flex; flex-direction: column; flex: 1; }
+
+  .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+  .top-row h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; }
+  .top-row .sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  /* ===== AI grid ===== */
+  section.deck { margin-bottom: 22px; }
+
+  .ai-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+  }
+
+  .ai-card {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent-color, var(--accent));
+    border-radius: var(--radius);
+    padding: 18px 20px 16px;
+    cursor: pointer;
+    display: flex; flex-direction: column; gap: 3px;
+    transition: transform var(--dur) ease, box-shadow var(--dur) ease;
+  }
+  .ai-card:hover, .ai-card:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px -8px var(--accent-color, var(--accent));
+  }
+  .ai-card:active { transform: translateY(0); }
+  .ai-card .name { font-size: 15px; font-weight: 700; }
+  .ai-card .desc { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .ai-card .ai-badges { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+  .ai-card .cap-icon { display: inline-flex; color: var(--muted); }
+  .ai-card .keycap {
+    position: absolute; top: 12px; right: 12px;
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 4px;
+    padding: 2px 5px; background: var(--panel);
+  }
+
+  /* ===== Panels ===== */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 22px 24px;
+  }
+  .card h2 {
+    font-size: 14.5px;
+    font-weight: 700;
+    margin-bottom: 18px;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .draft-hint { font-size: 12.5px; font-weight: 500; color: var(--muted); }
+  .draft-card { margin-bottom: 22px; }
+
+  .draft-meta { font-size: 11.5px; color: var(--muted); font-weight: 600; margin-top: 8px; }
+
+  textarea#draft, textarea#notes {
+    width: 100%;
+    min-height: 160px;
+    resize: vertical;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13.5px;
+    padding: 12px 14px;
+    line-height: 1.6;
+    outline: none;
+  }
+  textarea#draft:focus, textarea#notes:focus { border-color: var(--accent); }
+  textarea#notes { min-height: 110px; }
+
+  .secondary-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; }
+  .panel-col { display: flex; flex-direction: column; gap: 12px; }
+
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+  .draft-controls {
+    display: flex; flex-wrap: wrap;
+    justify-content: space-between; align-items: center;
+    gap: 16px; margin-top: 12px;
+  }
+  .draft-controls .row { margin-top: 0; }
+
+  /* Chips (redirects) */
+  .chip {
+    display: inline-flex; align-items: center;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 12.5px; font-weight: 600;
+    padding: 7px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all .2s ease;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip-remove { margin-left: 8px; color: var(--muted); font-size: 10px; cursor: pointer; }
+  .chip-remove:hover { color: var(--accent2); }
+  .chip-add { border-style: dashed; color: var(--accent); font-weight: 700; padding: 6px 14px; }
+  .chip-add:hover { background: var(--panel); border-color: var(--accent); }
+
+  .mini-input, .mini-textarea {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+  }
+  .mini-input:focus, .mini-textarea:focus { border-color: var(--accent); }
+  .mini-textarea { min-height: 80px; resize: vertical; }
+
+  .pm-form { padding: 0 24px; display: flex; flex-direction: column; gap: 10px; }
+  .pm-list { padding: 12px 24px 4px; max-height: 220px; overflow-y: auto; }
+  .pm-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13.5px; font-weight: 600; color: var(--text);
+  }
+  .pm-item:last-child { border-bottom: none; }
+  .pm-item-remove {
+    font-size: 11.5px; font-weight: 700; color: var(--muted);
+    cursor: pointer; background: transparent; border: none; padding: 0;
+  }
+  .pm-item-remove:hover { color: var(--accent2); }
+  .pm-empty { padding: 10px 0; font-size: 13px; color: var(--muted); }
+
+  .welcome-body { padding: 0 24px; font-size: 13px; line-height: 1.4; color: var(--muted); }
+  .welcome-body p { margin: 0 0 12px; }
+  .welcome-body strong { color: var(--text); }
+  .welcome-actions { padding: 16px 24px 0; margin-top: 0; justify-content: flex-end; }
+
+  .prompt-dropdown {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 12.5px; font-weight: 600;
+    padding: 7px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    max-width: 100%;
+    transition: all .2s ease;
+  }
+  .prompt-dropdown:hover, .prompt-dropdown:focus { border-color: var(--accent); color: var(--text); outline: none; }
+  .prompt-dropdown option { background: var(--panel); color: var(--text); }
+
+  .btn {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px; font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all .2s ease;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.icon-only { padding: 7px 12px; font-size: 14px; line-height: 1; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+  .btn.add { border-style: dashed; color: var(--accent); font-weight: 700; }
+  .btn.danger-outline { color: var(--accent2); border-color: var(--accent2); background: transparent; }
+  .btn.danger-outline:hover { background: var(--accent2); color: #fff; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* Shortcuts rows */
+  .shortcut-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 11px 0;
+    font-size: 13.5px; font-weight: 600; color: var(--text);
+    border-bottom: 1px solid var(--line);
+  }
+  .shortcut-row:last-child { border-bottom: none; }
+  .shortcut-key {
+    background: rgba(47,94,255,.12); color: var(--accent);
+    font-size: 11.5px; font-weight: 700;
+    padding: 4px 10px; border-radius: 20px;
+  }
+
+  /* Minimal mode */
+  body.minimal-mode .top-row,
+  body.minimal-mode .draft-card,
+  body.minimal-mode .secondary-grid,
+  body.minimal-mode footer { display: none; }
+  body.minimal-mode .main { justify-content: center; min-height: 100vh; }
+  body.minimal-mode .ai-grid { max-width: 720px; margin: 0 auto; }
+
+  /* ===== Modals ===== */
+  .cmdk-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+    padding: 24px;
+    z-index: 1000;
+  }
+  .cmdk-overlay.open { display: flex; }
+  .cmdk-box {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 24px 0;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    overflow: hidden;
+  }
+  .cmdk-input {
+    width: calc(100% - 48px);
+    margin: 0 24px 12px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: var(--sans);
+    padding: 10px 12px;
+    outline: none;
+  }
+  .cmdk-input:focus { border-color: var(--accent); }
+  .cmdk-list { max-height: 320px; overflow-y: auto; padding: 0 24px; }
+  .cmdk-item {
+    padding: 11px 0;
+    display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer;
+    font-size: 13.5px; font-weight: 600;
+    border-bottom: 1px solid var(--line);
+  }
+  .cmdk-item:last-child { border-bottom: none; }
+  .cmdk-item .cmdk-tag {
+    background: rgba(47,94,255,.12); color: var(--accent);
+    font-size: 11.5px; font-weight: 700;
+    padding: 4px 10px; border-radius: 20px;
+  }
+  .cmdk-item.active, .cmdk-item:hover { color: var(--accent); }
+  .cmdk-empty { padding: 14px 24px; font-size: 13px; color: var(--muted); }
+  .cmdk-hint { padding: 14px 24px 0; font-size: 12px; color: var(--muted); }
+
+  .shortcuts-modal-title { font-size: 16px; font-weight: 700; padding: 0 24px 12px; }
+  .shortcuts-modal-body { padding: 0 24px; }
+
+  /* ===== Error banner ===== */
+  .error-banner {
+    display: none;
+    align-items: center; justify-content: space-between; gap: 12px;
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 2000;
+    background: var(--accent2);
+    color: #fff;
+    font-family: var(--sans);
+    font-size: 13px; font-weight: 600;
+    padding: 12px 18px;
+  }
+  .error-banner button {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.5);
+    color: #fff;
+    border-radius: 8px;
+    padding: 4px 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* ===== Footer ===== */
+  footer {
+    margin-top: auto;
+    padding-top: 40px;
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  @media (max-width: 900px) {
+    body { flex-direction: column; }
+    .sidebar {
+      width: 100%; height: auto; position: sticky;
+      flex-direction: row; align-items: center;
+      padding: 12px 16px;
+      border-right: none; border-bottom: 1px solid var(--line);
+      gap: 12px;
+    }
+    .brand { margin-bottom: 0; }
+    .nav { flex-direction: row; flex: 1; overflow-x: auto; gap: 2px; }
+    .nav-item { padding: 10px; gap: 0; font-size: 0; }
+    .nav-item .ico { font-size: 16px; }
+    .sidebar-footer { border-top: none; padding-top: 0; flex-direction: row; align-items: center; }
+    .reset-btn { width: auto; }
+    .side-flyout { left: auto; right: 0; min-width: 160px; }
+    .storage-indicator { display: none; }
+    .secondary-grid { grid-template-columns: 1fr; }
+    .main { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="error-banner" class="error-banner">
+  <span>⚠ Something went wrong. Try refreshing the page — if it keeps happening, open the browser console (F12) for details.</span>
+  <button id="error-banner-close" type="button" aria-label="Dismiss">✕</button>
+</div>
+
+<div class="sidebar">
+  <div class="brand">dase<span>/hub</span></div>
+
+  <nav class="nav">
+    <button class="nav-item" id="cmdk-trigger" type="button" title="Search">
+      <span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
+      Search
+    </button>
+
+    <button class="nav-item" id="minimal-toggle" aria-pressed="false" type="button">
+      <span class="ico">◧</span> Minimal Mode
+    </button>
+
+    <div class="sidebar-item">
+      <button class="nav-item" id="save-trigger" aria-haspopup="true" aria-expanded="false" type="button">
+        <span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg></span>
+        Data
+      </button>
+      <div class="side-flyout" id="save-dropdown">
+        <button class="more-item" id="export-data" type="button">⭳ Export data</button>
+        <button class="more-item" id="import-data" type="button">⭱ Import data</button>
+      </div>
+    </div>
+
+    <button class="nav-item" id="shortcuts-trigger" type="button">
+      <span class="ico">?</span> Shortcuts
+    </button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="storage-indicator">
+      <div class="storage-header">
+        <span>Storage</span>
+        <span id="storageText">0 KB / 5 MB</span>
+      </div>
+      <div class="storage-bar-track">
+        <div class="storage-bar-fill" id="storageBar"></div>
+      </div>
+    </div>
+
+    <button class="reset-btn" id="reset-storage" type="button">↺ Reset Data</button>
+
+    <div class="user-box">
+      <div class="theme-pill-switch">
+        <button class="theme-pill-btn" id="btnLight" type="button" aria-label="Light mode">☀</button>
+        <button class="theme-pill-btn" id="btnDark" type="button" aria-label="Dark mode">☾</button>
+      </div>
+      <a class="icon-btn" id="dase-btn" href="https://donodaseves.github.io/dase/" target="_blank" rel="noopener" title="Go to website">D</a>
+    </div>
+  </div>
+
+  <input type="file" id="import-file-input" accept="application/json" style="display:none;">
+</div>
+
+<div class="main">
+  <div class="top-row">
+    <div>
+      <h1>Hub</h1>
+      <div class="sub">Your AI models, drafts and quick links in one place.</div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section class="deck">
+      <div class="ai-grid" id="ai-grid"></div>
+    </section>
+
+    <div class="card draft-card">
+      <h2>Draft <span class="draft-hint">press / to jump here</span></h2>
+      <textarea id="draft" placeholder="Write or paste a prompt here..."></textarea>
+      <div class="draft-meta" id="draft-meta">0 words · 0 characters · ~0 tokens</div>
+      <div class="draft-controls">
+        <div class="row">
+          <button class="btn primary" id="copy-draft">Copy</button>
+          <button class="btn" id="save-draft">Save .txt</button>
+          <button class="btn danger-outline" id="clear-draft">Clear</button>
+        </div>
+        <div class="row" id="prompt-lib">
+          <select class="prompt-dropdown" id="dd-start"></select>
+          <select class="prompt-dropdown" id="dd-end"></select>
+          <select class="prompt-dropdown" id="dd-mood"></select>
+          <select class="prompt-dropdown" id="dd-custom"></select>
+          <button class="btn icon-only add" id="prompt-manager-trigger" type="button" title="My Prompts" aria-label="My Prompts">+</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="secondary-grid">
+      <div class="panel-col">
+        <div class="card">
+          <h2>Notes</h2>
+          <textarea id="notes" placeholder="Quick notes..."></textarea>
+          <div class="row">
+            <button class="btn primary" id="notes-copy">Copy</button>
+            <button class="btn" id="notes-save">Save .txt</button>
+            <button class="btn danger-outline" id="notes-clear">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-col">
+        <div class="card">
+          <h2>Redirects</h2>
+          <div class="row" id="redirect-links"></div>
+        </div>
+      </div>
+    </section>
+
+    <footer>Personal project, built with AI assistance. No support or bug fixes provided.</footer>
+  </div>
+</div>
+
+<div class="cmdk-overlay" id="cmdk-overlay">
+  <div class="cmdk-box">
+    <input type="text" id="cmdk-input" class="cmdk-input" placeholder="Search models and links..." autocomplete="off" spellcheck="false">
+    <div class="cmdk-list" id="cmdk-list"></div>
+    <div class="cmdk-hint">↑↓ navigate · Enter open · Esc close</div>
+  </div>
+</div>
+
+<div class="cmdk-overlay" id="shortcuts-overlay">
+  <div class="cmdk-box">
+    <div class="shortcuts-modal-title">Shortcuts</div>
+    <div id="shortcuts-body" class="shortcuts-modal-body"></div>
+    <div class="row welcome-actions">
+      <button class="btn primary" id="shortcuts-close" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="cmdk-overlay" id="prompt-manager-overlay">
+  <div class="cmdk-box">
+    <div class="shortcuts-modal-title">My Prompts</div>
+    <div class="pm-form">
+      <input type="text" id="pm-label" class="mini-input" placeholder="Label (e.g. MyPrompt)">
+      <textarea id="pm-text" class="mini-textarea" placeholder="Prompt text..."></textarea>
+      <button class="btn primary" id="pm-add" type="button">Add prompt</button>
+    </div>
+    <div id="pm-list" class="pm-list"></div>
+    <div class="cmdk-hint">Esc close</div>
+  </div>
+</div>
+
+<div class="cmdk-overlay" id="redirect-manager-overlay">
+  <div class="cmdk-box">
+    <div class="shortcuts-modal-title">Add Redirect</div>
+    <div class="pm-form">
+      <input type="text" id="redirect-label-input" class="mini-input" placeholder="Label">
+      <input type="text" id="redirect-url-input" class="mini-input" placeholder="https://...">
+      <button class="btn primary" id="redirect-add-btn" type="button">Add redirect</button>
+    </div>
+    <div id="rm-list" class="pm-list"></div>
+    <div class="cmdk-hint">Esc close</div>
+  </div>
+</div>
+
+<div class="cmdk-overlay" id="reset-confirm-overlay">
+  <div class="cmdk-box">
+    <div class="shortcuts-modal-title">Reset LocalStorage</div>
+    <div class="welcome-body">
+      <p>Type <strong>"dase"</strong> below to confirm deleting all local data.</p>
+    </div>
+    <div class="pm-form">
+      <input type="text" id="reset-confirm-input" class="mini-input" placeholder="dase" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="row welcome-actions">
+      <button class="btn danger-outline" id="reset-confirm-btn" type="button" disabled>Delete All</button>
+      <button class="btn" id="reset-cancel-btn" type="button">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function acdShowErrorBanner() {
+  var banner = document.getElementById("error-banner");
+  if (banner) banner.style.display = "flex";
+}
+window.addEventListener("error", function () { acdShowErrorBanner(); });
+(function () {
+  var closeBtn = document.getElementById("error-banner-close");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", function () {
+      var banner = document.getElementById("error-banner");
+      if (banner) banner.style.display = "none";
+    });
+  }
+})();
+
+(function () {
+  "use strict";
+  try {
+
+  /* ============ SAFE STORAGE HELPERS ============ */
+  function safeGet(key, fallback) {
+    try {
+      var v = localStorage.getItem(key);
+      return v === null ? fallback : v;
+    } catch (e) { return fallback; }
+  }
+  function safeSet(key, value) {
+    try { 
+      localStorage.setItem(key, value); 
+      updateStorageVisualizer();
+      return true; 
+    } catch (e) { return false; }
+  }
+  function safeRemove(key) {
+    try { 
+      localStorage.removeItem(key); 
+      updateStorageVisualizer();
+    } catch (e) { /* ignore */ }
+  }
+  function safeClear() {
+    try { 
+      localStorage.clear(); 
+      updateStorageVisualizer();
+    } catch (e) { /* ignore */ }
+  }
+
+  /* ============ STORAGE VISUALIZER ============ */
+  function updateStorageVisualizer() {
+    try {
+      var totalBytes = 0;
+      for (var key in localStorage) {
+        if (localStorage.hasOwnProperty(key)) {
+          totalBytes += ((localStorage[key].length + key.length) * 2);
+        }
+      }
+      var maxBytes = 5 * 1024 * 1024; // ~5MB
+      var kb = (totalBytes / 1024).toFixed(1);
+      var percentage = Math.min((totalBytes / maxBytes) * 100, 100).toFixed(1);
+
+      var txt = document.getElementById('storageText');
+      var bar = document.getElementById('storageBar');
+      if (txt) txt.innerText = kb + " KB (" + percentage + "%)";
+      if (bar) bar.style.width = Math.max(percentage, 2) + "%";
+    } catch (e) {}
+  }
+
+  /* ============ MODAL HELPERS ============ */
+  var lastFocusedBeforeModal = null;
+
+  function getFocusableIn(el) {
+    var nodes = el.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])');
+    return Array.prototype.filter.call(nodes, function (node) { return node.offsetParent !== null; });
+  }
+
+  function openModal(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    lastFocusedBeforeModal = document.activeElement;
+    el.classList.add("open");
+    var focusable = getFocusableIn(el);
+    if (focusable.length) focusable[0].focus();
+  }
+  function closeModal(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove("open");
+    if (lastFocusedBeforeModal && typeof lastFocusedBeforeModal.focus === "function") {
+      lastFocusedBeforeModal.focus();
+    }
+    lastFocusedBeforeModal = null;
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Tab") return;
+    var openOverlays = document.querySelectorAll(".cmdk-overlay.open");
+    if (!openOverlays.length) return;
+    var modal = openOverlays[openOverlays.length - 1];
+    var focusable = getFocusableIn(modal);
+    if (!focusable.length) return;
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  });
+
+  /* ============ DATA ============ */
+  var AIS = [
+    { name: "ChatGPT",    desc: "General purpose",  url: "https://chat.openai.com/",      accent: "#10A37F", caps: ["files", "images", "web"] },
+    { name: "Claude",     desc: "Writing & code",   url: "https://claude.ai/new",         accent: "#D97757", caps: ["files", "web"]           },
+    { name: "Gemini",     desc: "Multimodal",       url: "https://gemini.google.com/app", accent: "#4E8CFF", caps: ["files", "images", "web"] },
+    { name: "Mistral",    desc: "Open-weight / EU", url: "https://chat.mistral.ai/chat",  accent: "#FF7000", caps: ["files", "images"]        },
+    { name: "Perplexity", desc: "Web research",     url: "https://www.perplexity.ai/",    accent: "#20B8CD", caps: ["files", "web"]           },
+    { name: "Grok",       desc: "Real-time data",   url: "https://grok.com/",             accent: "#9AA0A6", caps: ["files", "images", "web"] },
+    { name: "DeepSeek",   desc: "Reasoning & code", url: "https://chat.deepseek.com/",    accent: "#4D6BFE", caps: ["files"]                  },
+    { name: "DuckDuckGo", desc: "Privacy",          url: "https://duckduckgo.com/aichat", accent: "#DE5833", caps: ["files", "images"]        }
+  ];
+
+  var PROMPTS_CONTENT = [
+    { label: "Sum",       text: "Summarize the following text concisely, focusing on the main points:\n\n" },
+    { label: "Explain",   text: "Explain the following concept in simple terms, as if I were a beginner:\n\n" },
+    { label: "Fix",       text: "Please correct the grammar, flow, and clarity of the following text while keeping the original meaning intact:\n\n" },
+    { label: "Translate", text: "Translate the following text into natural sounding \"Language\":\n\n" },
+    { label: "List",      text: "Organize the following information into a clear bullet-point list with a brief introduction and conclusion:\n\n" },
+    { label: "Ideas",     text: "Give me 5 creative ideas or perspectives regarding the following topic:\n\n" },
+    { label: "Review",    text: "Review the following text and point out any logical fallacies or missing information:\n\n" }
+  ];
+
+  var PROMPTS_STYLE = [
+    { label: "Lang",      text: "From now on, please respond to all my messages exclusively in [language]." },
+    { label: "Assume",    text: "Mention any assumptions you are making in your answer." },
+    { label: "Brief",     text: "Keep your answer brief and avoid unnecessary filler words." },
+    { label: "Table",     text: "Present the pros and cons in a table format." },
+    { label: "Steps",     text: "Break this down into a step-by-step guide." },
+    { label: "Ask",       text: "Before answering, ask me any questions you need to clarify my request." }
+  ];
+
+  var PROMPTS_MOOD = [
+    { label: "Formal",   text: "Respond in a formal, professional tone." },
+    { label: "Casual",   text: "Respond in a casual, relaxed tone." },
+    { label: "Sincere",  text: "Respond in a sincere, honest, and direct tone." },
+    { label: "Friendly", text: "Respond in a warm, friendly tone." },
+    { label: "Playful",  text: "Respond in a playful, lighthearted tone." }
+  ];
+
+  /* ============ THEME ============ */
+  var root = document.documentElement;
+  function applyTheme(t) {
+    root.setAttribute("data-theme", t);
+    var lightBtn = document.getElementById("btnLight");
+    var darkBtn = document.getElementById("btnDark");
+    lightBtn.classList.toggle("active", t === "light");
+    darkBtn.classList.toggle("active", t === "dark");
+  }
+  var lightMediaQuery = window.matchMedia ? window.matchMedia("(prefers-color-scheme: light)") : null;
+  function systemTheme() {
+    return lightMediaQuery && lightMediaQuery.matches ? "light" : "dark";
+  }
+  var savedTheme = safeGet("acd-theme", null);
+  applyTheme(savedTheme || systemTheme());
+
+  if (lightMediaQuery) {
+    lightMediaQuery.addEventListener("change", function () {
+      if (!safeGet("acd-theme", null)) applyTheme(systemTheme());
+    });
+  }
+
+  function setThemeManually(t) {
+    applyTheme(t);
+    safeSet("acd-theme", t);
+  }
+
+  document.getElementById("btnLight").addEventListener("click", function () { setThemeManually("light"); });
+  document.getElementById("btnDark").addEventListener("click", function () { setThemeManually("dark"); });
+
+  /* ============ FOCUS MODE ============ */
+  var minimalBtn = document.getElementById("minimal-toggle");
+  function applyMinimal(on) {
+    document.body.classList.toggle("minimal-mode", on);
+    minimalBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    safeSet("acd-minimal", on ? "1" : "0");
+  }
+  applyMinimal(safeGet("acd-minimal", "0") === "1");
+  minimalBtn.addEventListener("click", function () {
+    applyMinimal(!document.body.classList.contains("minimal-mode"));
+  });
+
+  /* ============ AI GRID ============ */
+  var CAP_ICONS = {
+    files: '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>',
+    images: '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>',
+    web: '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="3" y1="12" x2="21" y2="12"></line><path d="M12 3a14 14 0 0 1 3.6 9 14 14 0 0 1-3.6 9 14 14 0 0 1-3.6-9A14 14 0 0 1 12 3z"></path></svg>'
+  };
+  var CAP_LABELS = { files: "Accepts file uploads", images: "Generates images", web: "Live web access" };
+
+  var grid = document.getElementById("ai-grid");
+  AIS.forEach(function (ai, i) {
+    var card = document.createElement("div");
+    card.className = "ai-card";
+    card.tabIndex = 0;
+    card.setAttribute("role", "button");
+    card.setAttribute("aria-label", "Open " + ai.name + " (Alt+" + (i + 1) + ")");
+    card.style.setProperty("--accent-color", ai.accent);
+    var capsHtml = (ai.caps || []).map(function (c) {
+      return '<span class="cap-icon" title="' + CAP_LABELS[c] + '">' + CAP_ICONS[c] + '</span>';
+    }).join('');
+    card.innerHTML =
+      '<span class="keycap">Alt+' + (i + 1) + '</span>' +
+      '<span class="name">' + ai.name + '</span>' +
+      '<span class="desc">' + ai.desc + '</span>' +
+      '<span class="ai-badges">' + capsHtml + '</span>';
+    function open() { window.open(ai.url, "_blank", "noopener"); }
+    card.addEventListener("click", open);
+    card.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
+    });
+    grid.appendChild(card);
+  });
+
+  /* Kept only Alt+1 to Alt+8 shortcuts */
+  document.addEventListener("keydown", function (e) {
+    if (!e.altKey) return;
+    var n = parseInt(e.key, 10);
+    if (n >= 1 && n <= 8) {
+      e.preventDefault();
+      window.open(AIS[n - 1].url, "_blank", "noopener");
+    }
+  });
+
+  /* Kept Draft shortcut '/' */
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "/") return;
+    var active = document.activeElement;
+    var typing = active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA");
+    if (typing) return;
+    e.preventDefault();
+    document.getElementById("draft").focus();
+  });
+
+  /* ============ DRAFT / PROMPT LIBRARY ============ */
+  var draft = document.getElementById("draft");
+  var draftMeta = document.getElementById("draft-meta");
+  draft.value = safeGet("acd-draft", "");
+
+  function updateMeta() {
+    var text = draft.value;
+    var words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    var tokens = text.length ? Math.max(1, Math.round(text.length / 4)) : 0;
+    draftMeta.textContent = words + " words · " + text.length + " characters · ~" + tokens + " tokens";
+  }
+  updateMeta();
+
+  draft.addEventListener("input", function () {
+    safeSet("acd-draft", draft.value);
+    updateMeta();
+  });
+
+  draft.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    var pos = draft.selectionStart;
+    if (pos !== draft.selectionEnd) return;
+    var value = draft.value;
+    var before = value.slice(0, pos);
+    var after = value.slice(pos);
+    var trimmedBefore = before.replace(/[ \t]+$/, "");
+    var lastChar = trimmedBefore.slice(-1);
+    if (!lastChar || !/[a-zA-Z0-9À-ÖØ-öø-ÿ]/.test(lastChar)) return;
+    e.preventDefault();
+    var newBefore = trimmedBefore + ".";
+    draft.value = newBefore + "\n" + after;
+    var newPos = newBefore.length + 1;
+    draft.selectionStart = draft.selectionEnd = newPos;
+    safeSet("acd-draft", draft.value);
+    updateMeta();
+  });
+
+  /* ============ NOTES ============ */
+  var notes = document.getElementById("notes");
+  notes.value = safeGet("acd-notes", "");
+  notes.addEventListener("input", function () {
+    safeSet("acd-notes", notes.value);
+  });
+
+  document.getElementById("notes-copy").addEventListener("click", function () {
+    var btn = this;
+    navigator.clipboard.writeText(notes.value).then(function () {
+      var old = btn.textContent;
+      btn.textContent = "Copied";
+      setTimeout(function () { btn.textContent = old; }, 1200);
+    });
+  });
+
+  document.getElementById("notes-save").addEventListener("click", function () {
+    if (!notes.value.trim()) return;
+    var blob = new Blob([notes.value], { type: "text/plain" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = "notes-" + stamp + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById("notes-clear").addEventListener("click", function () {
+    notes.value = "";
+    safeRemove("acd-notes");
+    notes.focus();
+  });
+
+  /* ============ CLEAN TEXT ============ */
+  function cleanText(text) {
+    text = text.replace(/[ \t]+/g, " ");
+    text = text.split("\n").map(function (line) { return line.trim(); }).join("\n");
+    text = text.replace(/\n{3,}/g, "\n\n");
+    text = text.replace(/\b(\w+)(\s+\1\b)+/gi, "$1");
+    return text.trim();
+  }
+
+  draft.addEventListener("paste", function () {
+    setTimeout(function () {
+      draft.value = cleanText(draft.value);
+      safeSet("acd-draft", draft.value);
+      updateMeta();
+    }, 0);
+  });
+  draft.addEventListener("blur", function () {
+    if (!draft.value) return;
+    draft.value = cleanText(draft.value);
+    safeSet("acd-draft", draft.value);
+    updateMeta();
+  });
+
+  function buildPromptDropdown(selectEl, getItems, placeholder) {
+    function rebuild() {
+      var items = getItems();
+      selectEl.innerHTML = "";
+      var ph = document.createElement("option");
+      ph.value = "";
+      ph.textContent = placeholder;
+      selectEl.appendChild(ph);
+      items.forEach(function (p, idx) {
+        var opt = document.createElement("option");
+        opt.value = idx;
+        opt.textContent = p.label;
+        selectEl.appendChild(opt);
+      });
+    }
+    rebuild();
+    selectEl.addEventListener("change", function () {
+      if (selectEl.value === "") return;
+      var items = getItems();
+      var p = items[parseInt(selectEl.value, 10)];
+      draft.value += (draft.value && !draft.value.endsWith("\n") ? "\n" : "") + p.text;
+      safeSet("acd-draft", draft.value);
+      updateMeta();
+      draft.focus();
+      selectEl.selectedIndex = 0;
+    });
+    return rebuild;
+  }
+  buildPromptDropdown(document.getElementById("dd-start"), function () { return PROMPTS_CONTENT; }, "Start");
+  buildPromptDropdown(document.getElementById("dd-end"), function () { return PROMPTS_STYLE; }, "End");
+  buildPromptDropdown(document.getElementById("dd-mood"), function () { return PROMPTS_MOOD; }, "Mood");
+
+  /* ============ CUSTOM PROMPTS ============ */
+  var CUSTOM_PROMPTS = [];
+  try { CUSTOM_PROMPTS = JSON.parse(safeGet("acd-custom-prompts", "[]")); } catch (e) { CUSTOM_PROMPTS = []; }
+
+  function saveCustomPrompts() {
+    safeSet("acd-custom-prompts", JSON.stringify(CUSTOM_PROMPTS));
+  }
+
+  var rebuildCustomDropdown = buildPromptDropdown(
+    document.getElementById("dd-custom"),
+    function () { return CUSTOM_PROMPTS; },
+    "Custom"
+  );
+
+  function renderManagerList(listElId, items, emptyText, onRemove) {
+    var list = document.getElementById(listElId);
+    list.innerHTML = "";
+    if (!items.length) {
+      var empty = document.createElement("div");
+      empty.className = "pm-empty";
+      empty.textContent = emptyText;
+      list.appendChild(empty);
+      return;
+    }
+    items.forEach(function (item, idx) {
+      var row = document.createElement("div");
+      row.className = "pm-item";
+      var label = document.createElement("span");
+      label.textContent = item.label;
+      var remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "pm-item-remove";
+      remove.textContent = "remove";
+      remove.setAttribute("aria-label", "Remove " + item.label);
+      remove.addEventListener("click", function () { onRemove(idx); });
+      row.appendChild(label);
+      row.appendChild(remove);
+      list.appendChild(row);
+    });
+  }
+
+  function renderPromptManagerList() {
+    renderManagerList("pm-list", CUSTOM_PROMPTS, "No custom prompts yet.", function (idx) {
+      CUSTOM_PROMPTS.splice(idx, 1);
+      saveCustomPrompts();
+      renderPromptManagerList();
+      rebuildCustomDropdown();
+    });
+  }
+
+  document.getElementById("pm-add").addEventListener("click", function () {
+    var labelInput = document.getElementById("pm-label");
+    var textInput = document.getElementById("pm-text");
+    var label = labelInput.value.trim();
+    var text = textInput.value.trim();
+    if (!label || !text) return;
+    if (!/^\[.*\]$/.test(label)) label = "[" + label + "]";
+    CUSTOM_PROMPTS.push({ label: label, text: text });
+    saveCustomPrompts();
+    labelInput.value = "";
+    textInput.value = "";
+    renderPromptManagerList();
+    rebuildCustomDropdown();
+  });
+
+  var promptManagerOverlay = document.getElementById("prompt-manager-overlay");
+  function openPromptManager() {
+    openModal("prompt-manager-overlay");
+    renderPromptManagerList();
+  }
+  function closePromptManager() {
+    closeModal("prompt-manager-overlay");
+  }
+  document.getElementById("prompt-manager-trigger").addEventListener("click", openPromptManager);
+  promptManagerOverlay.addEventListener("click", function (e) {
+    if (e.target === promptManagerOverlay) closePromptManager();
+  });
+
+  document.getElementById("copy-draft").addEventListener("click", function () {
+    var btn = this;
+    navigator.clipboard.writeText(draft.value).then(function () {
+      var old = btn.textContent;
+      btn.textContent = "Copied";
+      setTimeout(function () { btn.textContent = old; }, 1200);
+    });
+  });
+
+  document.getElementById("save-draft").addEventListener("click", function () {
+    if (!draft.value.trim()) return;
+    var blob = new Blob([draft.value], { type: "text/plain" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = "draft-" + stamp + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById("clear-draft").addEventListener("click", function () {
+    draft.value = "";
+    safeRemove("acd-draft");
+    updateMeta();
+    draft.focus();
+  });
+
+  /* ============ REDIRECTS ============ */
+  var REDIRECTS = [
+    { label: "Excalidraw", url: "https://excalidraw.com/" },
+    { label: "Lovable", url: "https://lovable.dev" },
+    { label: "NotebookLM", url: "https://notebooklm.google.com/" },
+    { label: "Translator", url: "https://translate.google.com/" },
+    { label: "Dase Sites", url: "https://donodaseves.github.io/dase/" }
+  ];
+
+  var CUSTOM_REDIRECTS = [];
+  try { CUSTOM_REDIRECTS = JSON.parse(safeGet("acd-custom-redirects", "[]")); } catch (e) { CUSTOM_REDIRECTS = []; }
+
+  function saveCustomRedirects() {
+    safeSet("acd-custom-redirects", JSON.stringify(CUSTOM_REDIRECTS));
+  }
+
+  function normalizeUrl(u) {
+    if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+    return u;
+  }
+
+  var redirectLinks = document.getElementById("redirect-links");
+
+  function addRedirectChip(r, removable, idx) {
+    var link = document.createElement("a");
+    link.className = "chip";
+    link.href = r.url;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.textContent = r.label;
+    if (removable) {
+      var remove = document.createElement("span");
+      remove.className = "chip-remove";
+      remove.textContent = "\u2715";
+      remove.title = "Remove";
+      remove.setAttribute("role", "button");
+      remove.setAttribute("tabindex", "0");
+      remove.setAttribute("aria-label", "Remove " + r.label);
+      function doRemove(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        CUSTOM_REDIRECTS.splice(idx, 1);
+        saveCustomRedirects();
+        renderRedirects();
+      }
+      remove.addEventListener("click", doRemove);
+      remove.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") doRemove(e);
+      });
+      link.appendChild(remove);
+    }
+    redirectLinks.appendChild(link);
+  }
+
+  function renderRedirects() {
+    redirectLinks.innerHTML = "";
+    REDIRECTS.forEach(function (r) { addRedirectChip(r, false); });
+    CUSTOM_REDIRECTS.forEach(function (r, idx) { addRedirectChip(r, true, idx); });
+    var addTrigger = document.createElement("button");
+    addTrigger.className = "chip chip-add";
+    addTrigger.type = "button";
+    addTrigger.title = "Add redirect";
+    addTrigger.setAttribute("aria-label", "Add redirect");
+    addTrigger.textContent = "+";
+    addTrigger.addEventListener("click", openRedirectManager);
+    redirectLinks.appendChild(addTrigger);
+  }
+  renderRedirects();
+
+  function renderRedirectManagerList() {
+    renderManagerList("rm-list", CUSTOM_REDIRECTS, "No custom redirects yet.", function (idx) {
+      CUSTOM_REDIRECTS.splice(idx, 1);
+      saveCustomRedirects();
+      renderRedirects();
+      renderRedirectManagerList();
+    });
+  }
+
+  document.getElementById("redirect-add-btn").addEventListener("click", function () {
+    var labelInput = document.getElementById("redirect-label-input");
+    var urlInput = document.getElementById("redirect-url-input");
+    var label = labelInput.value.trim();
+    var url = urlInput.value.trim();
+    if (!label || !url) return;
+    CUSTOM_REDIRECTS.push({ label: label, url: normalizeUrl(url) });
+    saveCustomRedirects();
+    labelInput.value = "";
+    urlInput.value = "";
+    renderRedirects();
+    renderRedirectManagerList();
+  });
+
+  var redirectManagerOverlay = document.getElementById("redirect-manager-overlay");
+  function openRedirectManager() {
+    openModal("redirect-manager-overlay");
+    renderRedirectManagerList();
+  }
+  function closeRedirectManager() {
+    closeModal("redirect-manager-overlay");
+  }
+  redirectManagerOverlay.addEventListener("click", function (e) {
+    if (e.target === redirectManagerOverlay) closeRedirectManager();
+  });
+
+  /* ============ COMMAND PALETTE ============ */
+  function buildCmdkItems() {
+    return AIS.map(function (ai, i) {
+      return { label: ai.name, tag: "Alt+" + (i + 1), url: ai.url };
+    }).concat(REDIRECTS.concat(CUSTOM_REDIRECTS).map(function (r) {
+      return { label: r.label, tag: "Redirect", url: r.url };
+    }));
+  }
+
+  var cmdkOverlay = document.getElementById("cmdk-overlay");
+  var cmdkInput = document.getElementById("cmdk-input");
+  var cmdkList = document.getElementById("cmdk-list");
+  var CMDK_ITEMS = buildCmdkItems();
+  var cmdkFiltered = CMDK_ITEMS.slice();
+  var cmdkActive = 0;
+
+  function renderCmdkList() {
+    cmdkList.innerHTML = "";
+    if (!cmdkFiltered.length) {
+      cmdkList.innerHTML = '<div class="cmdk-empty">No matches</div>';
+      return;
+    }
+    cmdkFiltered.forEach(function (item, idx) {
+      var el = document.createElement("div");
+      el.className = "cmdk-item" + (idx === cmdkActive ? " active" : "");
+      var labelSpan = document.createElement("span");
+      labelSpan.textContent = item.label;
+      var tagSpan = document.createElement("span");
+      tagSpan.className = "cmdk-tag";
+      tagSpan.textContent = item.tag;
+      el.appendChild(labelSpan);
+      el.appendChild(tagSpan);
+      el.addEventListener("click", function () { openCmdkItem(item); });
+      cmdkList.appendChild(el);
+    });
+  }
+
+  function openCmdkItem(item) {
+    window.open(item.url, "_blank", "noopener");
+    closeCmdk();
+  }
+
+  function openCmdk() {
+    CMDK_ITEMS = buildCmdkItems();
+    openModal("cmdk-overlay");
+    cmdkInput.value = "";
+    cmdkFiltered = CMDK_ITEMS.slice();
+    cmdkActive = 0;
+    renderCmdkList();
+    setTimeout(function () { cmdkInput.focus(); }, 0);
+  }
+
+  function closeCmdk() {
+    closeModal("cmdk-overlay");
+  }
+
+  cmdkInput.addEventListener("input", function () {
+    var q = cmdkInput.value.toLowerCase();
+    cmdkFiltered = CMDK_ITEMS.filter(function (i) { return i.label.toLowerCase().indexOf(q) > -1; });
+    cmdkActive = 0;
+    renderCmdkList();
+  });
+
+  cmdkInput.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (cmdkFiltered.length) cmdkActive = (cmdkActive + 1) % cmdkFiltered.length;
+      renderCmdkList();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (cmdkFiltered.length) cmdkActive = (cmdkActive - 1 + cmdkFiltered.length) % cmdkFiltered.length;
+      renderCmdkList();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (cmdkFiltered[cmdkActive]) openCmdkItem(cmdkFiltered[cmdkActive]);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      closeCmdk();
+    }
+  });
+
+  cmdkOverlay.addEventListener("click", function (e) {
+    if (e.target === cmdkOverlay) closeCmdk();
+  });
+
+  document.getElementById("cmdk-trigger").addEventListener("click", openCmdk);
+
+  /* ============ SHORTCUTS LIST ============ */
+  var SHORTCUTS = [
+    { key: "Alt+1–8", desc: "Open AI models" },
+    { key: "/", desc: "Jump to draft" }
+  ];
+
+  var shortcutsBody = document.getElementById("shortcuts-body");
+  SHORTCUTS.forEach(function (s) {
+    var row = document.createElement("div");
+    row.className = "shortcut-row";
+    row.innerHTML = "<span>" + s.desc + "</span><span class=\"shortcut-key\">" + s.key + "</span>";
+    shortcutsBody.appendChild(row);
+  });
+
+  var shortcutsOverlay = document.getElementById("shortcuts-overlay");
+  function openShortcuts() { openModal("shortcuts-overlay"); }
+  function closeShortcuts() { closeModal("shortcuts-overlay"); }
+
+  document.getElementById("shortcuts-trigger").addEventListener("click", openShortcuts);
+  document.getElementById("shortcuts-close").addEventListener("click", closeShortcuts);
+  shortcutsOverlay.addEventListener("click", function (e) {
+    if (e.target === shortcutsOverlay) closeShortcuts();
+  });
+
+  /* ============ EXPORT / IMPORT ============ */
+  var STORAGE_KEYS = [
+    "acd-draft", "acd-notes", "acd-theme", "acd-minimal",
+    "acd-custom-prompts", "acd-custom-redirects"
+  ];
+
+  document.getElementById("export-data").addEventListener("click", function () {
+    var data = {};
+    STORAGE_KEYS.forEach(function (k) {
+      var v = safeGet(k, null);
+      if (v !== null) data[k] = v;
+    });
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = "dase-hub-backup-" + stamp + ".json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  var importFileInput = document.getElementById("import-file-input");
+  document.getElementById("import-data").addEventListener("click", function () {
+    importFileInput.click();
+  });
+  importFileInput.addEventListener("change", function () {
+    var file = importFileInput.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var data = JSON.parse(reader.result);
+        var imported = 0;
+        Object.keys(data).forEach(function (k) {
+          if (STORAGE_KEYS.indexOf(k) > -1) {
+            safeSet(k, data[k]);
+            imported++;
+          }
+        });
+        if (!imported) {
+          alert("That file doesn't look like a Dase Hub backup.");
+          return;
+        }
+        alert("Data imported. The page will reload now.");
+        location.reload();
+      } catch (e) {
+        alert("Could not read that file — make sure it's a backup exported from this app.");
+      }
+    };
+    reader.readAsText(file);
+    importFileInput.value = "";
+  });
+
+  var resetConfirmOverlay = document.getElementById("reset-confirm-overlay");
+  var resetConfirmInput = document.getElementById("reset-confirm-input");
+  var resetConfirmBtn = document.getElementById("reset-confirm-btn");
+
+  function openResetConfirm() {
+    resetConfirmInput.value = "";
+    resetConfirmBtn.disabled = true;
+    openModal("reset-confirm-overlay");
+  }
+  function closeResetConfirm() {
+    closeModal("reset-confirm-overlay");
+  }
+
+  document.getElementById("reset-storage").addEventListener("click", openResetConfirm);
+
+  resetConfirmInput.addEventListener("input", function () {
+    resetConfirmBtn.disabled = resetConfirmInput.value.trim().toLowerCase() !== "dase";
+  });
+
+  resetConfirmBtn.addEventListener("click", function () {
+    if (resetConfirmInput.value.trim().toLowerCase() !== "dase") return;
+    safeClear();
+    location.reload();
+  });
+
+  document.getElementById("reset-cancel-btn").addEventListener("click", closeResetConfirm);
+  resetConfirmOverlay.addEventListener("click", function (e) {
+    if (e.target === resetConfirmOverlay) closeResetConfirm();
+  });
+
+  /* ============ SIDEBAR FLYOUTS ============ */
+  function setupFlyout(triggerId, dropdownId) {
+    var trigger = document.getElementById(triggerId);
+    var dropdown = document.getElementById(dropdownId);
+    function toggle(e) {
+      e.stopPropagation();
+      var isOpen = dropdown.classList.toggle("open");
+      trigger.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    }
+    function close() {
+      dropdown.classList.remove("open");
+      trigger.setAttribute("aria-expanded", "false");
+    }
+    trigger.addEventListener("click", toggle);
+    document.addEventListener("click", function (e) {
+      if (dropdown.classList.contains("open") && !dropdown.contains(e.target) && e.target !== trigger) {
+        close();
+      }
+    });
+    Array.prototype.forEach.call(dropdown.querySelectorAll(".more-item"), function (item) {
+      item.addEventListener("click", close);
+    });
+    return close;
+  }
+  var closeSave = setupFlyout("save-trigger", "save-dropdown");
+
+  var MODAL_CLOSERS = {
+    "shortcuts-overlay": closeShortcuts,
+    "prompt-manager-overlay": closePromptManager,
+    "redirect-manager-overlay": closeRedirectManager,
+    "cmdk-overlay": closeCmdk,
+    "reset-confirm-overlay": closeResetConfirm
+  };
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    Object.keys(MODAL_CLOSERS).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el && el.classList.contains("open")) MODAL_CLOSERS[id]();
+    });
+    closeSave();
+  });
+
+  /* Initialize storage meter on load */
+  updateStorageVisualizer();
+
+  } catch (err) {
+    console.error(err);
+    acdShowErrorBanner();
+  }
+})();
+</script>
+</body>
+</html>
