@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>dase/grid</title>
+<title>🖼️ dase/grid</title>
 <!-- html2pdf.js for PDF export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
@@ -17,6 +17,7 @@
     --text: #14161C;
     --muted: #767C8C;
     --accent: #2F5EFF;
+    --accent-hover: #1e4bd8;
     --accent2: #FF5A3C;
     --line: #E7E8EF;
     --bar: #E2E5F5;
@@ -62,6 +63,7 @@
     font-size: 14px; font-weight: 600;
     padding: 10px 12px; border-radius: 10px;
     cursor: pointer;
+    transition: all 0.2s ease;
   }
   .nav a .ico { font-size: 16px; width: 18px; text-align: center; }
   .nav a.active { background: var(--accent); color: #fff; }
@@ -110,22 +112,27 @@
   .top-row h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; }
   .top-row .sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
 
+  .tab-content { display: none; flex-direction: column; gap: 22px; }
+  .tab-content.active { display: flex; }
+
   /* Controls Panel */
-  .panel-box { background: var(--card); border-radius: 16px; border: 1px solid var(--line); padding: 22px 24px; margin-bottom: 22px; }
+  .panel-box { background: var(--card); border-radius: 16px; border: 1px solid var(--line); padding: 22px 24px; }
   .panel-box h2 { font-size: 14.5px; font-weight: 700; margin-bottom: 18px; }
 
-  .controls-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px; }
+  .controls-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
   .control-group { display: flex; flex-direction: column; gap: 6px; }
   .control-group label { font-size: 12px; font-weight: 700; color: var(--muted); }
-  .control-group select, .control-group input[type="file"] {
+  .control-group select, .control-group input[type="file"], .control-group input[type="text"], .control-group input[type="range"] {
     padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font-size: 13px; outline: none;
   }
+  .control-group input[type="range"] { padding: 0; cursor: pointer; accent-color: var(--accent); }
 
   .btn-action {
     background: var(--accent); color: #fff; border: none; padding: 10px 18px; border-radius: 10px;
     font-weight: 700; font-size: 13px; cursor: pointer; transition: opacity 0.2s; display: inline-flex; align-items: center; gap: 8px;
   }
   .btn-action:hover { opacity: 0.9; }
+  .btn-action:disabled { background: var(--line); color: var(--muted); cursor: not-allowed; opacity: 0.7; }
 
   /* SVG Filters for Colorblindness */
   .svg-filters { position: absolute; width: 0; height: 0; overflow: hidden; }
@@ -141,6 +148,7 @@
   .preview-stage {
     background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 30px;
     display: flex; flex-direction: column; gap: 24px; align-items: center; min-height: 400px;
+    position: relative; overflow: hidden;
   }
 
   /* Mockup Visual Elements */
@@ -178,6 +186,26 @@
   .status-offline { background: #80848e; }
 
   .avatar-size-container { display: flex; gap: 20px; align-items: flex-end; margin-top: 10px; }
+
+  /* Watermark Styling */
+  .color-pickers-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .color-picker-item {
+    display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); font-weight: 600;
+  }
+  input[type="color"] {
+    -webkit-appearance: none; border: 1px solid var(--line); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; background: none; padding: 0;
+  }
+  input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+  input[type="color"]::-webkit-color-swatch { border: none; border-radius: 6px; }
+
+  canvas {
+    max-width: 100%; max-height: 70vh; height: auto; border-radius: 12px; border: 1px solid var(--line); box-shadow: 0 10px 25px rgba(0,0,0,0.08); display: none;
+  }
+  .placeholder-text {
+    color: var(--muted); text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 60px 0;
+  }
 
   /* ===== Modal ===== */
   .modal-overlay {
@@ -223,7 +251,8 @@
 <div class="sidebar">
   <div class="brand">dase<span style="color: var(--accent);">/grid</span></div>
   <div class="nav">
-    <a class="active"><span class="ico">🖼</span> Visual Mockups</a>
+    <a id="navMockups" class="active" onclick="switchTab('mockups')"><span class="ico">🖼</span> Visual Mockups</a>
+    <a id="navWatermark" onclick="switchTab('watermark')"><span class="ico">💧</span> Watermark Generator</a>
   </div>
   <div class="sidebar-footer">
     <div class="storage-indicator">
@@ -249,106 +278,195 @@
 </div>
 
 <div class="main">
-  <div class="top-row">
-    <div>
-      <h1>Banner and Cover Tester</h1>
-      <div class="sub">Simulate and validate your social media designs before publishing.</div>
+
+  <!-- TAB 1: VISUAL MOCKUPS -->
+  <div id="tabMockups" class="tab-content active">
+    <div class="top-row">
+      <div>
+        <h1>Banner and Cover Tester</h1>
+        <div class="sub">Simulate and validate your social media designs before publishing.</div>
+      </div>
+      <button class="btn-action" onclick="exportPDF()">📄 Export PDF</button>
     </div>
-    <button class="btn-action" onclick="exportPDF()">📄 Export PDF</button>
-  </div>
 
-  <!-- Uploads and Filter Controls -->
-  <div class="panel-box">
-    <h2>1. Uploads & Visual Filters</h2>
-    <div class="controls-grid">
-      <div class="control-group">
-        <label>Banner Image</label>
-        <input type="file" id="uploadBanner" accept="image/*" onchange="handleImageUpload(event, 'banner')">
-      </div>
-      <div class="control-group">
-        <label>Profile Picture (Avatar)</label>
-        <input type="file" id="uploadAvatar" accept="image/*" onchange="handleImageUpload(event, 'avatar')">
-      </div>
-      <div class="control-group">
-        <label>Accessibility Simulator</label>
-        <select id="filterSelect" onchange="applyFilter()">
-          <option value="none">Normal (No filter)</option>
-          <option value="protanopia">Protanopia (Red-blind)</option>
-          <option value="deuteranopia">Deuteranopia (Green-blind)</option>
-          <option value="tritanopia">Tritanopia (Blue-blind)</option>
-          <option value="achromatopsia">Achromatopsia (Monochrome)</option>
-          <option value="blur">Blur (Contrast Check)</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <!-- Platform & Badge Options -->
-  <div class="panel-box">
-    <h2>2. Platform & Profile Options</h2>
-    <div class="controls-grid">
-      <div class="control-group">
-        <label>Target Platform</label>
-        <select id="platformSelect" onchange="renderMockup()">
-          <optgroup label="Video & Live Streaming">
-            <option value="yt">YouTube (Banner 16:9 / 2560x1440)</option>
-            <option value="twitch">Twitch (Banner 1200x480)</option>
-            <option value="tiktok">TikTok (Vertical Format 9:16)</option>
-          </optgroup>
-          <optgroup label="Social Networks">
-            <option value="twitter">Twitter / X (Header 1500x500)</option>
-            <option value="fb_ig">Facebook / Instagram (Cover 820x312)</option>
-            <option value="linkedin">LinkedIn (Cover 1584x396)</option>
-            <option value="pinterest_reddit">Pinterest / Reddit (Banner 1920x256)</option>
-          </optgroup>
-          <optgroup label="Community">
-            <option value="discord">Discord (Profile Banner 600x240)</option>
-          </optgroup>
-        </select>
-      </div>
-      <div class="control-group">
-        <label>Profile Picture Shape</label>
-        <select id="avatarCropSelect" onchange="renderMockup()">
-          <option value="circle">Circular</option>
-          <option value="rounded">Rounded Corners</option>
-        </select>
-      </div>
-      <div class="control-group">
-        <label>Badge / Status</label>
-        <select id="badgeSelect" onchange="renderMockup()">
-          <option value="none">None</option>
-          <option value="live">LIVE</option>
-          <option value="verified_blue">Verified (Blue)</option>
-          <option value="verified_gold">Verified (Gold)</option>
-          <option value="verified_gray">Verified (Gray)</option>
-          <option value="status_online">Discord: Online</option>
-          <option value="status_dnd">Discord: Do Not Disturb</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <!-- Preview Container -->
-  <div class="preview-stage" id="exportArea">
-    <div id="mockupContainer" class="mockup-card"></div>
-
-    <!-- Avatar Sizes -->
-    <div style="width: 100%; max-width: 800px;">
-      <h2 style="font-size: 14px; color: var(--muted); margin-bottom: 12px;">Avatar Display Size Simulation</h2>
-      <div class="avatar-size-container">
-        <div style="text-align: center;">
-          <div id="avatarP" class="mockup-avatar circle" style="width: 32px; height: 32px;"></div>
-          <span style="font-size: 10px; color: var(--muted);">Small (32px)</span>
+    <!-- Uploads and Filter Controls -->
+    <div class="panel-box">
+      <h2>1. Uploads & Visual Filters</h2>
+      <div class="controls-grid">
+        <div class="control-group">
+          <label>Banner Image</label>
+          <input type="file" id="uploadBanner" accept="image/*" onchange="handleImageUpload(event, 'banner')">
         </div>
-        <div style="text-align: center;">
-          <div id="avatarM" class="mockup-avatar circle" style="width: 64px; height: 64px;"></div>
-          <span style="font-size: 10px; color: var(--muted);">Medium (64px)</span>
+        <div class="control-group">
+          <label>Profile Picture (Avatar)</label>
+          <input type="file" id="uploadAvatar" accept="image/*" onchange="handleImageUpload(event, 'avatar')">
         </div>
-        <div style="text-align: center;">
-          <div id="avatarG" class="mockup-avatar circle" style="width: 96px; height: 96px;"></div>
-          <span style="font-size: 10px; color: var(--muted);">Large (96px)</span>
+        <div class="control-group">
+          <label>Accessibility Simulator</label>
+          <select id="filterSelect" onchange="applyFilter()">
+            <option value="none">Normal (No filter)</option>
+            <option value="protanopia">Protanopia (Red-blind)</option>
+            <option value="deuteranopia">Deuteranopia (Green-blind)</option>
+            <option value="tritanopia">Tritanopia (Blue-blind)</option>
+            <option value="achromatopsia">Achromatopsia (Monochrome)</option>
+            <option value="blur">Blur (Contrast Check)</option>
+          </select>
         </div>
       </div>
+    </div>
+
+    <!-- Platform & Badge Options -->
+    <div class="panel-box">
+      <h2>2. Platform & Profile Options</h2>
+      <div class="controls-grid">
+        <div class="control-group">
+          <label>Target Platform</label>
+          <select id="platformSelect" onchange="renderMockup()">
+            <optgroup label="Video & Live Streaming">
+              <option value="yt">YouTube (Banner 16:9 / 2560x1440)</option>
+              <option value="twitch">Twitch (Banner 1200x480)</option>
+              <option value="tiktok">TikTok (Vertical Format 9:16)</option>
+            </optgroup>
+            <optgroup label="Social Networks">
+              <option value="twitter">Twitter / X (Header 1500x500)</option>
+              <option value="fb_ig">Facebook / Instagram (Cover 820x312)</option>
+              <option value="linkedin">LinkedIn (Cover 1584x396)</option>
+              <option value="pinterest_reddit">Pinterest / Reddit (Banner 1920x256)</option>
+            </optgroup>
+            <optgroup label="Community">
+              <option value="discord">Discord (Profile Banner 600x240)</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Profile Picture Shape</label>
+          <select id="avatarCropSelect" onchange="renderMockup()">
+            <option value="circle">Circular</option>
+            <option value="rounded">Rounded Corners</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Badge / Status</label>
+          <select id="badgeSelect" onchange="renderMockup()">
+            <option value="none">None</option>
+            <option value="live">LIVE</option>
+            <option value="verified_blue">Verified (Blue)</option>
+            <option value="verified_gold">Verified (Gold)</option>
+            <option value="verified_gray">Verified (Gray)</option>
+            <option value="status_online">Discord: Online</option>
+            <option value="status_dnd">Discord: Do Not Disturb</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview Container -->
+    <div class="preview-stage" id="exportArea">
+      <div id="mockupContainer" class="mockup-card"></div>
+
+      <!-- Avatar Sizes -->
+      <div style="width: 100%; max-width: 800px;">
+        <h2 style="font-size: 14px; color: var(--muted); margin-bottom: 12px;">Avatar Display Size Simulation</h2>
+        <div class="avatar-size-container">
+          <div style="text-align: center;">
+            <div id="avatarP" class="mockup-avatar circle" style="width: 32px; height: 32px;"></div>
+            <span style="font-size: 10px; color: var(--muted);">Small (32px)</span>
+          </div>
+          <div style="text-align: center;">
+            <div id="avatarM" class="mockup-avatar circle" style="width: 64px; height: 64px;"></div>
+            <span style="font-size: 10px; color: var(--muted);">Medium (64px)</span>
+          </div>
+          <div style="text-align: center;">
+            <div id="avatarG" class="mockup-avatar circle" style="width: 96px; height: 96px;"></div>
+            <span style="font-size: 10px; color: var(--muted);">Large (96px)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: WATERMARK GENERATOR -->
+  <div id="tabWatermark" class="tab-content">
+    <div class="top-row">
+      <div>
+        <h1>Watermark Studio</h1>
+        <p class="sub">Add custom watermarks, logos and text protections to your images.</p>
+      </div>
+      <button id="downloadBtn" class="btn-action" disabled onclick="downloadWatermarkImage()">
+        ⬇ Download Image
+      </button>
+    </div>
+
+    <div class="panel-box">
+      <h2>1. Image & Text Settings</h2>
+      <div class="controls-grid">
+        <div class="control-group">
+          <label for="wmImageLoader">Select Image</label>
+          <input type="file" id="wmImageLoader" accept="image/*">
+        </div>
+        <div class="control-group">
+          <label for="wmText">Watermark Text</label>
+          <input type="text" id="wmText" value="© A minha Marca" placeholder="Escreva o texto...">
+        </div>
+        <div class="control-group">
+          <label for="wmStyle">Style & Position</label>
+          <select id="wmStyle">
+            <option value="bottom-right">Bottom Right Corner</option>
+            <option value="bottom-left">Bottom Left Corner</option>
+            <option value="top-right">Top Right Corner</option>
+            <option value="top-left">Top Left Corner</option>
+            <option value="center">Centered Highlight</option>
+            <option value="repeat">Repeated Pattern (Diagonal Grid)</option>
+            <option value="banner">Transparent Footer Banner</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="wmFont">Typography / Font</label>
+          <select id="wmFont">
+            <option value="sans-serif">Sans-Serif (Modern)</option>
+            <option value="serif">Serif (Classic)</option>
+            <option value="monospace">Monospace (Code)</option>
+            <option value="Impact">Impact (Bold)</option>
+            <option value="Georgia">Georgia (Elegant)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-box">
+      <h2>2. Appearance & Colors</h2>
+      <div class="controls-grid">
+        <div class="control-group">
+          <label>Colors (Text / Background)</label>
+          <div class="color-pickers-row">
+            <div class="color-picker-item">
+              <input type="color" id="wmColor" value="#ffffff">
+              <span>Text</span>
+            </div>
+            <div class="color-picker-item">
+              <input type="color" id="wmBgColor" value="#000000">
+              <span>Background</span>
+            </div>
+          </div>
+        </div>
+        <div class="control-group">
+          <label for="wmSize">Text Size (<span id="sizeVal">4</span>%)</label>
+          <input type="range" id="wmSize" min="1" max="10" value="4">
+        </div>
+        <div class="control-group">
+          <label for="wmOpacity">Opacity (<span id="opacityVal">70</span>%)</label>
+          <input type="range" id="wmOpacity" min="10" max="100" value="70">
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview Canvas Area -->
+    <div class="preview-stage">
+      <div id="wmPlaceholder" class="placeholder-text">
+        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity: 0.5;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 002-2H6a2 2 0 00-2 2v12a2 2 0 00-2 2z"></path></svg>
+        <p>Upload an image above to start applying watermarks</p>
+      </div>
+      <canvas id="wmCanvas"></canvas>
     </div>
   </div>
 
@@ -375,6 +493,15 @@ let state = {
   bannerImg: localStorage.getItem('dase_banner') || '',
   avatarImg: localStorage.getItem('dase_avatar') || ''
 };
+
+/* Navigation Tabs */
+function switchTab(tabName) {
+  document.getElementById('navMockups').classList.toggle('active', tabName === 'mockups');
+  document.getElementById('navWatermark').classList.toggle('active', tabName === 'watermark');
+  
+  document.getElementById('tabMockups').classList.toggle('active', tabName === 'mockups');
+  document.getElementById('tabWatermark').classList.toggle('active', tabName === 'watermark');
+}
 
 function setTheme(mode) {
   const root = document.documentElement;
@@ -425,7 +552,7 @@ function updateStorageVisualizer() {
   document.getElementById('storageBar').style.width = `${Math.max(percentage, 2)}%`;
 }
 
-/* Image Upload Handling */
+/* Image Upload Handling for Mockups */
 function handleImageUpload(e, type) {
   const file = e.target.files[0];
   if (!file) return;
@@ -469,8 +596,7 @@ function renderMockup() {
   const badge = document.getElementById('badgeSelect').value;
   const container = document.getElementById('mockupContainer');
 
-  // Aspect Ratio Mapping by Platform
-  let aspectRatio = '16/5'; // Default
+  let aspectRatio = '16/5';
 
   if (platform === 'twitch') aspectRatio = '12/4';
   else if (platform === 'discord') aspectRatio = '5/2';
@@ -483,7 +609,6 @@ function renderMockup() {
   const bannerStyle = state.bannerImg ? `background-image: url('${state.bannerImg}');` : '';
   const avatarStyle = state.avatarImg ? `background-image: url('${state.avatarImg}');` : '';
 
-  // Badge / Status Elements
   let badgeHtml = '';
   if (badge === 'live') badgeHtml = `<div class="badge-overlay">LIVE</div>`;
   if (badge === 'verified_blue') badgeHtml = `<span class="badge-verified blue">✓</span>`;
@@ -511,7 +636,6 @@ function renderMockup() {
     </div>
   `;
 
-  // Update secondary Avatar sizes
   ['avatarP', 'avatarM', 'avatarG'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
@@ -532,6 +656,157 @@ function exportPDF() {
     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
   html2pdf().set(opt).from(element).save();
+}
+
+/* ===== WATERMARK GENERATOR ENGINE ===== */
+const wmImageLoader = document.getElementById('wmImageLoader');
+const wmCanvas = document.getElementById('wmCanvas');
+const wmCtx = wmCanvas.getContext('2d');
+const wmPlaceholder = document.getElementById('wmPlaceholder');
+const downloadBtn = document.getElementById('downloadBtn');
+
+const wmText = document.getElementById('wmText');
+const wmStyle = document.getElementById('wmStyle');
+const wmFont = document.getElementById('wmFont');
+const wmColor = document.getElementById('wmColor');
+const wmBgColor = document.getElementById('wmBgColor');
+const wmSize = document.getElementById('wmSize');
+const wmOpacity = document.getElementById('wmOpacity');
+
+const sizeVal = document.getElementById('sizeVal');
+const opacityVal = document.getElementById('opacityVal');
+
+let wmImg = new Image();
+let wmImgLoaded = false;
+
+wmImageLoader.addEventListener('change', handleWatermarkImage, false);
+
+[wmText, wmStyle, wmFont, wmColor, wmBgColor, wmSize, wmOpacity].forEach(el => {
+  el.addEventListener('input', updateWatermarkCanvas);
+});
+
+wmSize.addEventListener('input', () => sizeVal.textContent = wmSize.value);
+wmOpacity.addEventListener('input', () => opacityVal.textContent = wmOpacity.value);
+
+function handleWatermarkImage(e) {
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    wmImg = new Image();
+    wmImg.onload = function() {
+      wmCanvas.width = wmImg.width;
+      wmCanvas.height = wmImg.height;
+      wmImgLoaded = true;
+      wmPlaceholder.style.display = 'none';
+      wmCanvas.style.display = 'block';
+      downloadBtn.disabled = false;
+      updateWatermarkCanvas();
+    }
+    wmImg.src = event.target.result;
+  }
+  if (e.target.files[0]) {
+    reader.readAsDataURL(e.target.files[0]);
+  }
+}
+
+function hexToRgba(hex, alpha) {
+  let r = parseInt(hex.slice(1, 3), 16);
+  let g = parseInt(hex.slice(3, 5), 16);
+  let b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function updateWatermarkCanvas() {
+  if (!wmImgLoaded) return;
+
+  wmCtx.clearRect(0, 0, wmCanvas.width, wmCanvas.height);
+  wmCtx.drawImage(wmImg, 0, 0);
+
+  const text = wmText.value;
+  if (!text) return;
+
+  const opacity = wmOpacity.value / 100;
+  const fontSize = Math.max(16, Math.floor(wmCanvas.width * (wmSize.value / 100)));
+  const fontStyle = `${fontSize}px ${wmFont.value}`;
+  
+  const textColor = hexToRgba(wmColor.value, opacity);
+  const bgColor = hexToRgba(wmBgColor.value, opacity * 0.6);
+
+  wmCtx.font = fontStyle;
+  const textMetrics = wmCtx.measureText(text);
+  const textWidth = textMetrics.width;
+  const textHeight = fontSize;
+
+  const padding = fontSize * 0.4;
+  const margin = fontSize * 0.8;
+  const style = wmStyle.value;
+
+  wmCtx.save();
+
+  if (style === 'banner') {
+    const bannerHeight = textHeight + padding * 2;
+    wmCtx.fillStyle = bgColor;
+    wmCtx.fillRect(0, wmCanvas.height - bannerHeight, wmCanvas.width, bannerHeight);
+
+    wmCtx.fillStyle = textColor;
+    wmCtx.textAlign = 'center';
+    wmCtx.textBaseline = 'middle';
+    wmCtx.fillText(text, wmCanvas.width / 2, wmCanvas.height - (bannerHeight / 2));
+
+  } else if (style === 'repeat') {
+    wmCtx.fillStyle = textColor;
+    wmCtx.textAlign = 'center';
+    wmCtx.textBaseline = 'middle';
+
+    const stepX = textWidth + margin * 3;
+    const stepY = textHeight + margin * 3;
+
+    wmCtx.translate(wmCanvas.width / 2, wmCanvas.height / 2);
+    wmCtx.rotate(-Math.PI / 6);
+
+    const diag = Math.sqrt(wmCanvas.width * wmCanvas.width + wmCanvas.height * wmCanvas.height);
+
+    for (let x = -diag; x < diag; x += stepX) {
+      for (let y = -diag; y < diag; y += stepY) {
+        wmCtx.fillText(text, x, y);
+      }
+    }
+
+  } else {
+    let x = margin;
+    let y = margin;
+
+    if (style.includes('right')) {
+      x = wmCanvas.width - textWidth - margin - (padding * 2);
+    } else if (style.includes('center')) {
+      x = (wmCanvas.width - textWidth) / 2 - padding;
+    }
+
+    if (style.includes('bottom')) {
+      y = wmCanvas.height - textHeight - margin - (padding * 2);
+    } else if (style.includes('center')) {
+      y = (wmCanvas.height - textHeight) / 2 - padding;
+    }
+
+    wmCtx.fillStyle = bgColor;
+    wmCtx.beginPath();
+    wmCtx.roundRect(x, y, textWidth + (padding * 2), textHeight + (padding * 2), 6);
+    wmCtx.fill();
+
+    wmCtx.fillStyle = textColor;
+    wmCtx.textAlign = 'left';
+    wmCtx.textBaseline = 'top';
+    wmCtx.fillText(text, x + padding, y + padding);
+  }
+
+  wmCtx.restore();
+}
+
+function downloadWatermarkImage() {
+  if (!wmImgLoaded) return;
+  const link = document.createElement('a');
+  link.download = 'watermark-image.png';
+  link.href = wmCanvas.toDataURL('image/png');
+  link.click();
 }
 
 // Initialization
