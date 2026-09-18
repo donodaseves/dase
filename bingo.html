@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dase/ — Bingo</title>
+
+<!-- 
+================================================================================
+NOTA DE PADRONIZAÇÃO DE INTERFACE / DESIGN SYSTEM PARA IA:
+Sempre que for criado ou gerado um novo site para o ecossistema pessoal, garante 
+que são mantidos rigorosamente os seguintes elementos e padrões de interface:
+
+1. CONCISÃO E SINTAXE DE TEXTO:
+   - Utilizar SEMPRE o mínimo texto possível em todos os elementos da interface.
+   - NOTA IMPORTANTE: O conteúdo gerado deve ser SEMPRE traduzido por COMPLETO em português de Portugal.
+   - NOTA SOBRE FONTES: Em momento algum podem ser usadas outras fontes para além da que está no uibase.
+
+2. ÍCONES E EMOJIS NA SIDEBAR:
+   - Se forem utilizados ícones (na sidebar), utilizar obrigatoriamente EMOJIS.
+
+3. SIDEBAR & LARGURA:
+   - Manter a barra lateral com 240px de largura fixos em desktop.
+   - Preservar o comportamento responsivo (menu "drawer" deslizante para mobile com overlay/backdrop).
+
+4. TIPOGRAFIA & FONTES:
+   - Utilizar a pilha de fontes: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif.
+
+5. FOOTER DA SIDEBAR E CONTROLOS:
+   - Indicador / Barra de Progresso do LocalStorage.
+   - Botão de Reiniciar Dados (Reset LocalStorage) com confirmação "dase".
+   - Seletor de Tema (Pill Switch): alternador entre modo claro (☀) e escuro (☾).
+   - Botão "D": botão circular no canto inferior que redireciona para o site principal.
+
+6. RODAPÉ DA PÁGINA (FOOTER):
+   - Manter o texto de rodapé padrão: "Projeto pessoal, desenvolvido com apoio de IA. Sem suporte ou correções de erros fornecidos."
+================================================================================
+-->
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F5F6FA;
+    --panel: #FFFFFF;
+    --card: #F5F6FA;
+    --sidebar: #FFFFFF;
+    --text: #14161C;
+    --muted: #767C8C;
+    --accent: #2F5EFF;
+    --accent2: #FF5A3C;
+    --line: #E7E8EF;
+    --bar: #E2E5F5;
+    --header-height: 60px;
+  }
+  [data-theme="dark"] {
+    --bg: #0E0F14;
+    --panel: #14161D;
+    --card: #181A22;
+    --sidebar: #12131A;
+    --text: #F4F5F9;
+    --muted: #8B8FA3;
+    --line: #262834;
+    --bar: #21232D;
+  }
+
+  body {
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    transition: background .25s, color .25s;
+    overflow-x: hidden;
+  }
+
+  .mobile-header {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--header-height);
+    background: var(--sidebar);
+    border-bottom: 1px solid var(--line);
+    padding: 0 16px;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 90;
+  }
+  .mobile-header .brand {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 0;
+  }
+  .mobile-header .brand span { color: var(--accent); }
+
+  .menu-toggle {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+  .menu-toggle:hover { background: var(--card); }
+
+  /* Fundo de Sobreposição para Mobile */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 98;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .sidebar-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .sidebar {
+    width: 240px;
+    background: var(--sidebar);
+    border-right: 1px solid var(--line);
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    z-index: 99;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+  }
+  .brand { font-size: 21px; font-weight: 800; letter-spacing: -0.5px; }
+  .brand span { color: var(--accent); }
+  
+  .close-sidebar-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  .nav { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .nav a {
+    display: flex; align-items: center; gap: 12px;
+    text-decoration: none; color: var(--muted);
+    font-size: 14.5px; font-weight: 600;
+    padding: 12px 14px; border-radius: 10px;
+    transition: background 0.2s, color 0.2s;
+  }
+  .nav a .ico { font-size: 16px; width: 20px; text-align: center; }
+  .nav a.active { background: var(--accent); color: #fff; }
+  .nav a:not(.active):hover { background: var(--card); }
+
+  /* Controlos na parte inferior da barra lateral */
+  .sidebar-footer {
+    display: flex; flex-direction: column; gap: 14px;
+    padding-top: 16px; border-top: 1px solid var(--line);
+  }
+
+  /* Indicador de Armazenamento */
+  .storage-indicator {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .storage-header {
+    display: flex;
+    justify-content: space-between;
+  }
+  .storage-bar-track {
+    height: 6px;
+    border-radius: 4px;
+    background: var(--bar);
+    overflow: hidden;
+  }
+  .storage-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+
+  .reset-btn {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all .2s ease;
+  }
+  .reset-btn:hover {
+    background: var(--accent2);
+    color: #ffffff;
+    border-color: var(--accent2);
+  }
+
+  .user-box {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .theme-pill-switch {
+    display: flex; align-items: center; background: var(--card);
+    border: 1px solid var(--line); border-radius: 20px; padding: 3px;
+    flex: 1; justify-content: space-between;
+  }
+  .theme-pill-btn {
+    flex: 1; border: none; background: transparent; color: var(--muted);
+    padding: 8px 0; border-radius: 16px; cursor: pointer;
+    font-size: 13px; display: flex; align-items: center; justify-content: center;
+    transition: all .2s ease;
+  }
+  .theme-pill-btn.active {
+    background: var(--sidebar); color: var(--text);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08); font-weight: 700;
+  }
+  .icon-btn {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--card); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; text-decoration: none; color: var(--text);
+    font-size: 14px; font-weight: 700; transition: background .2s;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover { background: var(--bar); }
+
+  .main { 
+    flex: 1; 
+    padding: 32px 40px 60px; 
+    max-width: 1100px; 
+    margin: 0 auto; 
+    display: flex; 
+    flex-direction: column; 
+    width: 100%;
+  }
+
+  /* Banner Principal / Hero do Bingo */
+  .hero {
+    background: linear-gradient(135deg, var(--accent), #6E8CFF);
+    border-radius: 22px;
+    padding: 30px 34px;
+    color: #fff;
+    margin-bottom: 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+  }
+  .hero .big { font-size: 48px; font-weight: 800; line-height: 1; }
+  .hero .big small { font-size: 19px; font-weight: 600; opacity: .85; }
+  .hero .cap { font-size: 13px; opacity: .85; margin-top: 6px; }
+  .hero .badge { 
+    background: rgba(255,255,255,.18); 
+    padding: 7px 14px; 
+    border-radius: 20px; 
+    font-size: 12.5px; 
+    font-weight: 700; 
+    white-space: nowrap;
+  }
+
+  /* Painéis e Controlos */
+  .panel-box { background: var(--card); border-radius: 16px; border: 1px solid var(--line); padding: 22px 24px; margin-bottom: 22px; }
+  .panel-box h2 { font-size: 14.5px; font-weight: 700; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+  .panel-box h2 .muted { color: var(--muted); font-weight: 500; font-size: 12.5px; }
+
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .action-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+  }
+  .action-btn.primary { background: var(--accent); color: #fff; }
+  .action-btn.primary:hover { opacity: 0.9; }
+  .action-btn.secondary { background: var(--bar); color: var(--text); border: 1px solid var(--line); }
+  .action-btn.secondary:hover { background: var(--line); }
+  .action-btn.danger { background: var(--card); color: var(--accent2); border: 1px solid var(--accent2); }
+  .action-btn.danger:hover { background: var(--accent2); color: #fff; }
+
+  /* Configuração do Centro */
+  .center-config-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 12px 16px;
+    border-radius: 12px;
+  }
+  .center-config-box label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .center-config-box input {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    font-size: 13.5px;
+    font-weight: 600;
+    outline: none;
+  }
+  .center-config-box input:focus { border-color: var(--accent); }
+
+  /* Textarea / Lista Livre */
+  .textarea-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .textarea-box label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .textarea-box textarea {
+    width: 100%;
+    min-height: 200px;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    outline: none;
+    resize: vertical;
+  }
+  .textarea-box textarea:focus { border-color: var(--accent); }
+
+  .items-counter {
+    font-size: 12.5px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .bingo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 10px;
+  }
+  
+  .bingo-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    width: 100%;
+    max-width: 650px;
+  }
+
+  .bingo-cell {
+    aspect-ratio: 1;
+    background: var(--panel);
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+    position: relative;
+    word-break: break-word;
+    overflow: hidden;
+  }
+
+  .bingo-cell:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .bingo-cell.marked {
+    background: rgba(47, 94, 255, 0.12);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .bingo-cell.marked::after {
+    content: "✓";
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    font-size: 11px;
+    font-weight: 800;
+    background: var(--accent);
+    color: #fff;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bingo-cell.center-cell {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    font-weight: 800;
+  }
+
+  /* Modal de Confirmação para Eliminação */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    padding: 16px;
+  }
+  .modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 24px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  }
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .modal p { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.4; }
+  .modal input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    font-size: 14px;
+    margin-bottom: 16px;
+    outline: none;
+  }
+  .modal input:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .modal-btn {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+  }
+  .modal-btn.cancel { background: var(--card); color: var(--text); border: 1px solid var(--line); }
+  .modal-btn.confirm { background: var(--accent2); color: #fff; }
+
+  /* Rodapé */
+  footer {
+    margin-top: auto;
+    padding-top: 40px;
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+
+  @media (max-width: 900px) {
+    .mobile-header { display: flex; }
+    .close-sidebar-btn { display: block; }
+    .sidebar-overlay { display: block; }
+
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      transform: translateX(-100%);
+      box-shadow: 5px 0 25px rgba(0,0,0,0.15);
+    }
+    .sidebar.open { transform: translateX(0); }
+
+    .main { padding: 20px 16px 40px; margin-top: var(--header-height); }
+    .hero { padding: 24px; }
+    .hero .big { font-size: 38px; }
+  }
+
+  @media (max-width: 480px) {
+    .hero { flex-direction: column; align-items: flex-start; gap: 14px; padding: 20px; }
+    .hero .big { font-size: 34px; }
+    .hero .badge { align-self: flex-start; }
+    .bingo-cell { font-size: 12px; padding: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Cabeçalho Mobile -->
+<header class="mobile-header">
+  <div class="brand">dase<span>/</span></div>
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Abrir menu">☰</button>
+</header>
+
+<!-- Fundo Escuro para Menu Mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="brand">dase<span>/</span></div>
+    <button class="close-sidebar-btn" onclick="closeSidebar()" aria-label="Fechar">✕</button>
+  </div>
+  <div class="nav">
+    <a href="#" class="active" id="navBingo" onclick="switchTab('bingo'); return false;"><span class="ico">🎯</span> Bingo</a>
+    <a href="#" id="navNames" onclick="switchTab('names'); return false;"><span class="ico">📝</span> Gerir Nomes</a>
+  </div>
+  <div class="sidebar-footer">
+    <div class="storage-indicator">
+      <div class="storage-header">
+        <span>Armazenamento</span>
+        <span id="storageText">0 KB / 5 MB</span>
+      </div>
+      <div class="storage-bar-track">
+        <div class="storage-bar-fill" id="storageBar"></div>
+      </div>
+    </div>
+
+    <button class="reset-btn" onclick="openResetModal()">↺ Repor</button>
+
+    <div class="user-box">
+      <div class="theme-pill-switch">
+        <button class="theme-pill-btn active" id="btnLight" onclick="setTheme('light')" aria-label="Modo Claro">☀</button>
+        <button class="theme-pill-btn" id="btnDark" onclick="setTheme('dark')" aria-label="Modo Escuro">☾</button>
+      </div>
+      <a href="https://donodaseves.github.io/dase/" class="icon-btn" title="Ir para o site">D</a>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="hero">
+    <div>
+      <div class="cap">Contador de Bingos</div>
+      <div class="big" id="bingoCountDisplay">0 <small>linhas/diagonais</small></div>
+    </div>
+    <div class="badge" id="statusBadge">🔥 Pronto para jogar</div>
+  </div>
+
+  <!-- Aba Bingo -->
+  <div id="tabBingo" class="tab-content">
+    <div class="panel-box">
+      <h2>Tabuleiro 5x5 <span class="muted">Clique nas caixas para marcar</span></h2>
+      <div class="bingo-container">
+        <div class="bingo-grid" id="bingoGrid">
+          <!-- Gerado via JavaScript -->
+        </div>
+      </div>
+      <div class="btn-row" style="justify-content: center; margin-top: 24px;">
+        <button class="action-btn danger" onclick="clearMarks()">🗑️ Limpar marcações</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Aba Gerir Nomes -->
+  <div id="tabNames" class="tab-content" style="display: none;">
+    <div class="panel-box">
+      <h2>
+        <span>Lista Livre de Itens / Nomes</span>
+        <span class="muted" id="itemsCounterInfo">0 itens inseridos</span>
+      </h2>
+      
+      <div class="center-config-box" style="margin-top: 14px;">
+        <label>Quadrado Central:</label>
+        <input type="text" id="centerInput" value="Centro" oninput="updateCenterValue()" placeholder="Ex: Centro ou 13" />
+      </div>
+
+      <div class="textarea-box">
+        <label>Itens disponíveis (adicione quantos quiser, um por linha; mínimo de 24 necessários):</label>
+        <textarea id="itemsTextarea" placeholder="Digite um item por linha..." oninput="handleTextareaInput()"></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button class="action-btn primary" onclick="randomizeAndGenerate()">🎲 Randomizar e Gerar</button>
+        <button class="action-btn danger" onclick="clearList()">🗑️ Limpar lista</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Projeto pessoal, desenvolvido com apoio de IA. Sem suporte ou correções de erros fornecidos.
+  </footer>
+
+</div>
+
+<!-- Modal de Confirmação para Eliminação -->
+<div class="modal-overlay" id="resetModal">
+  <div class="modal">
+    <h3>Repor LocalStorage</h3>
+    <p>Escreve <strong>"dase"</strong> para confirmar.</p>
+    <input type="text" id="confirmInput" placeholder="dase" autocomplete="off" />
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeResetModal()">Cancelar</button>
+      <button class="modal-btn confirm" onclick="confirmReset()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notificação customizada -->
+<div id="toastNotification" style="position: fixed; bottom: 24px; right: 24px; background: var(--panel); border: 1px solid var(--line); padding: 12px 20px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); font-size: 13.5px; font-weight: 600; z-index: 1100; opacity: 0; transition: opacity 0.3s ease; pointer-events: none;">
+  Mensagem
+</div>
+
+<script>
+let fullItemList = [
+  "Item 1", "Item 2", "Item 3", "Item 4", "Item 5",
+  "Item 6", "Item 7", "Item 8", "Item 9", "Item 10",
+  "Item 11", "Item 12", "Item 14", "Item 15", "Item 16",
+  "Item 17", "Item 18", "Item 19", "Item 20", "Item 21",
+  "Item 22", "Item 23", "Item 24", "Item 25", "Item 26"
+];
+let centerItem = "Centro";
+let currentBoardItems = Array(25).fill("");
+let markedState = Array(25).fill(false);
+markedState[12] = true; // Centro marcado por defeito
+
+function switchTab(tabName) {
+  const tabBingo = document.getElementById('tabBingo');
+  const tabNames = document.getElementById('tabNames');
+  const navBingo = document.getElementById('navBingo');
+  const navNames = document.getElementById('navNames');
+
+  if (tabName === 'bingo') {
+    tabBingo.style.display = 'block';
+    tabNames.style.display = 'none';
+    navBingo.classList.add('active');
+    navNames.classList.remove('active');
+  } else {
+    tabBingo.style.display = 'none';
+    tabNames.style.display = 'block';
+    navBingo.classList.remove('active');
+    navNames.classList.add('active');
+    syncTextareaFromState();
+  }
+  closeSidebar();
+}
+
+function showToast(message) {
+  const toast = document.getElementById('toastNotification');
+  toast.innerText = message;
+  toast.style.opacity = '1';
+  setTimeout(() => {
+    toast.style.opacity = '0';
+  }, 3000);
+}
+
+function syncTextareaFromState() {
+  document.getElementById('itemsTextarea').value = fullItemList.join('\n');
+  document.getElementById('centerInput').value = centerItem;
+  updateCounterDisplay();
+}
+
+function handleTextareaInput() {
+  const raw = document.getElementById('itemsTextarea').value;
+  fullItemList = raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+  updateCounterDisplay();
+  saveToLocalStorage();
+}
+
+function clearList() {
+  document.getElementById('itemsTextarea').value = '';
+  fullItemList = [];
+  updateCounterDisplay();
+  saveToLocalStorage();
+  showToast('Lista limpa com sucesso.');
+}
+
+function updateCenterValue() {
+  centerItem = document.getElementById('centerInput').value.trim() || "Centro";
+  currentBoardItems[12] = centerItem;
+  renderBoard();
+  saveToLocalStorage();
+}
+
+function updateCounterDisplay() {
+  const count = fullItemList.length;
+  const info = document.getElementById('itemsCounterInfo');
+  if (count < 24) {
+    info.innerText = `${count} itens (precisa de pelo menos 24)`;
+    info.style.color = 'var(--accent2)';
+  } else {
+    info.innerText = `${count} itens inseridos`;
+    info.style.color = 'var(--muted)';
+  }
+}
+
+function randomizeAndGenerate() {
+  const raw = document.getElementById('itemsTextarea').value;
+  fullItemList = raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+
+  if (fullItemList.length < 24) {
+    showToast('Insira pelo menos 24 itens na lista!');
+    return;
+  }
+
+  // Baralhar cópia da lista completa (Fisher-Yates)
+  let pool = [...fullItemList];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  // Selecionar 24 itens para o tabuleiro e deixar o resto de fora
+  const selected24 = pool.slice(0, 24);
+
+  let boardIdx = 0;
+  for (let i = 0; i < 25; i++) {
+    if (i === 12) {
+      currentBoardItems[i] = centerItem;
+    } else {
+      currentBoardItems[i] = selected24[boardIdx++];
+    }
+  }
+
+  markedState = Array(25).fill(false);
+  markedState[12] = true; // Centro pré-marcado
+
+  saveToLocalStorage();
+  renderBoard();
+  calculateBingos();
+  switchTab('bingo');
+  showToast('Novo Bingo randomizado!');
+}
+
+function renderBoard() {
+  const grid = document.getElementById('bingoGrid');
+  grid.innerHTML = '';
+
+  currentBoardItems.forEach((item, index) => {
+    const cell = document.createElement('div');
+    cell.className = 'bingo-cell';
+    if (index === 12) {
+      cell.classList.add('center-cell');
+    }
+    if (markedState[index]) {
+      cell.classList.add('marked');
+    }
+    cell.innerText = item || `Item ${index + 1}`;
+    cell.onclick = () => toggleCell(index);
+    grid.appendChild(cell);
+  });
+}
+
+function toggleCell(index) {
+  if (index === 12) return; // Centro fixo marcado
+  markedState[index] = !markedState[index];
+  renderBoard();
+  calculateBingos();
+  saveToLocalStorage();
+}
+
+function clearMarks() {
+  markedState = Array(25).fill(false);
+  markedState[12] = true; // Mantém o centro marcado
+  renderBoard();
+  calculateBingos();
+  saveToLocalStorage();
+  showToast('Marcações limpas.');
+}
+
+function calculateBingos() {
+  let bingos = 0;
+  
+  // Linhas
+  for (let r = 0; r < 5; r++) {
+    let rowComplete = true;
+    for (let c = 0; c < 5; c++) {
+      if (!markedState[r * 5 + c]) {
+        rowComplete = false;
+        break;
+      }
+    }
+    if (rowComplete) bingos++;
+  }
+
+  // Colunas
+  for (let c = 0; c < 5; c++) {
+    let colComplete = true;
+    for (let r = 0; r < 5; r++) {
+      if (!markedState[r * 5 + c]) {
+        colComplete = false;
+        break;
+      }
+    }
+    if (colComplete) bingos++;
+  }
+
+  // Diagonal Principal
+  let diag1Complete = true;
+  for (let i = 0; i < 5; i++) {
+    if (!markedState[i * 5 + i]) {
+      diag1Complete = false;
+      break;
+    }
+  }
+  if (diag1Complete) bingos++;
+
+  // Diagonal Secundária
+  let diag2Complete = true;
+  for (let i = 0; i < 5; i++) {
+    if (!markedState[i * 5 + (4 - i)]) {
+      diag2Complete = false;
+      break;
+    }
+  }
+  if (diag2Complete) bingos++;
+
+  document.getElementById('bingoCountDisplay').innerHTML = `${bingos} <small>linhas/diagonais</small>`;
+  const badge = document.getElementById('statusBadge');
+  if (bingos > 0) {
+    badge.innerText = `🎉 ${bingos} Bingo${bingos > 1 ? 's' : ''} Feito${bingos > 1 ? 's' : ''}!`;
+  } else {
+    badge.innerText = `🔥 A jogar...`;
+  }
+}
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('active');
+}
+
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  sidebar.classList.remove('open');
+  overlay.classList.remove('active');
+}
+
+function setTheme(mode) {
+  const root = document.documentElement;
+  root.setAttribute('data-theme', mode === 'dark' ? 'dark' : 'light');
+  document.getElementById('btnLight').classList.toggle('active', mode === 'light');
+  document.getElementById('btnDark').classList.toggle('active', mode === 'dark');
+  localStorage.setItem('dase_theme', mode);
+}
+
+function openResetModal() {
+  closeSidebar();
+  document.getElementById('resetModal').classList.add('active');
+  document.getElementById('confirmInput').value = '';
+  document.getElementById('confirmInput').focus();
+}
+
+function closeResetModal() {
+  document.getElementById('resetModal').classList.remove('active');
+}
+
+function confirmReset() {
+  const input = document.getElementById('confirmInput').value.trim();
+  if (input === 'dase') {
+    localStorage.clear();
+    location.reload();
+  } else {
+    showToast('Incorreto. Escreve "dase" para confirmar.');
+  }
+}
+
+function updateStorageVisualizer() {
+  let totalBytes = 0;
+  for (let key in localStorage) {
+    if (localStorage.hasOwnProperty(key)) {
+      totalBytes += ((localStorage[key].length + key.length) * 2);
+    }
+  }
+
+  const maxBytes = 5 * 1024 * 1024;
+  const kb = (totalBytes / 1024).toFixed(1);
+  const percentage = Math.min((totalBytes / maxBytes) * 100, 100).toFixed(1);
+
+  document.getElementById('storageText').innerText = `${kb} KB (${percentage}%)`;
+  document.getElementById('storageBar').style.width = `${Math.max(percentage, 2)}%`;
+}
+
+function saveToLocalStorage() {
+  localStorage.setItem('bingo_full_list', JSON.stringify(fullItemList));
+  localStorage.setItem('bingo_center', centerItem);
+  localStorage.setItem('bingo_current_board', JSON.stringify(currentBoardItems));
+  localStorage.setItem('bingo_marked', JSON.stringify(markedState));
+  updateStorageVisualizer();
+}
+
+function loadFromLocalStorage() {
+  const savedList = localStorage.getItem('bingo_full_list');
+  const savedCenter = localStorage.getItem('bingo_center');
+  const savedBoard = localStorage.getItem('bingo_current_board');
+  const savedMarked = localStorage.getItem('bingo_marked');
+  const savedTheme = localStorage.getItem('dase_theme');
+
+  if (savedTheme) {
+    setTheme(savedTheme);
+  }
+
+  if (savedList) {
+    try { fullItemList = JSON.parse(savedList); } catch(e) {}
+  }
+  if (savedCenter) {
+    centerItem = savedCenter;
+  }
+  if (savedBoard) {
+    try { currentBoardItems = JSON.parse(savedBoard); } catch(e) {}
+  }
+  if (savedMarked) {
+    try { markedState = JSON.parse(savedMarked); } catch(e) {}
+  }
+
+  if (!currentBoardItems || currentBoardItems.length !== 25 || currentBoardItems.every(x => !x)) {
+    randomizeAndGenerate();
+  } else {
+    renderBoard();
+    calculateBingos();
+  }
+
+  syncTextareaFromState();
+  updateStorageVisualizer();
+}
+
+window.onload = function() {
+  loadFromLocalStorage();
+};
+</script>
+
+</body>
+</html>
