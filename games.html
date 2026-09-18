@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dase/ — Jogos Gratuitos</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F5F6FA;
+    --panel: #FFFFFF;
+    --card: #FFFFFF;
+    --sidebar: #FFFFFF;
+    --text: #14161C;
+    --muted: #767C8C;
+    --accent: #2F5EFF;
+    --accent-dim: rgba(47, 94, 255, 0.12);
+    --accent2: #FF5A3C;
+    --line: #E7E8EF;
+    --bar: #E2E5F5;
+    --green: #2eaf63;
+    --yellow: #d99100;
+    --red: #e04848;
+    --header-height: 60px;
+    --mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Consolas, monospace;
+  }
+  [data-theme="dark"] {
+    --bg: #0E0F14;
+    --panel: #14161D;
+    --card: #181A22;
+    --sidebar: #12131A;
+    --text: #F4F5F9;
+    --muted: #8B8FA3;
+    --line: #262834;
+    --bar: #21232D;
+    --accent-dim: rgba(47, 94, 255, 0.25);
+    --green: #3ecf7e;
+    --yellow: #e8b34c;
+    --red: #ea6462;
+  }
+
+  body {
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    transition: background .25s, color .25s;
+    overflow-x: hidden;
+  }
+
+  /* ===== Cabeçalho Mobile ===== */
+  .mobile-header {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--header-height);
+    background: var(--sidebar);
+    border-bottom: 1px solid var(--line);
+    padding: 0 16px;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 90;
+  }
+  .mobile-header .brand {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 0;
+    text-decoration: none;
+    color: var(--text);
+  }
+  .mobile-header .brand span { color: var(--accent); }
+
+  .menu-toggle {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+  .menu-toggle:hover { background: var(--card); }
+
+  /* ===== Overlay para Mobile ===== */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 98;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .sidebar-overlay.active { opacity: 1; pointer-events: auto; }
+
+  /* ===== Sidebar ===== */
+  .sidebar {
+    width: 240px;
+    background: var(--sidebar);
+    border-right: 1px solid var(--line);
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    flex-shrink: 0;
+    z-index: 99;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  .brand { font-size: 21px; font-weight: 800; letter-spacing: -0.5px; }
+  .brand span { color: var(--accent); }
+  .brand a { text-decoration: none; color: inherit; }
+
+  .close-sidebar-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  .side-controls { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+
+  .btn {
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    padding: 10px 14px; border-radius: 10px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    border: 1px solid var(--line); background: var(--card); color: var(--text);
+    transition: all .2s ease;
+  }
+  .btn-primary { background: var(--accent); color: #fff; border: none; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn:hover:not(.btn-primary) { background: var(--bar); }
+  .btn.spinning svg { animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toggle-box {
+    margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--line);
+    font-size: 12px; color: var(--muted); display: flex; flex-direction: column; gap: 6px;
+  }
+  .toggle-box label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500; color: var(--text); }
+  .toggle-box input { accent-color: var(--accent); }
+
+  /* Rodapé da Sidebar exato ao uibase.html */
+  .sidebar-footer {
+    display: flex;
+    flex-direction: column;
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    gap: 14px;
+  }
+
+  /* Indicador de Armazenamento */
+  .storage-indicator {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .storage-header {
+    display: flex;
+    justify-content: space-between;
+  }
+  .storage-bar-track {
+    height: 6px;
+    border-radius: 4px;
+    background: var(--bar);
+    overflow: hidden;
+  }
+  .storage-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+
+  .reset-btn {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all .2s ease;
+  }
+  .reset-btn:hover {
+    background: var(--accent2);
+    color: #ffffff;
+    border-color: var(--accent2);
+  }
+
+  .user-box { display: flex; align-items: center; gap: 10px; }
+  .theme-pill-switch {
+    display: flex; align-items: center; background: var(--bg);
+    border: 1px solid var(--line); border-radius: 20px; padding: 3px;
+    flex: 1; justify-content: space-between;
+  }
+  .theme-pill-btn {
+    flex: 1; border: none; background: transparent; color: var(--muted);
+    padding: 8px 0; border-radius: 16px; cursor: pointer;
+    font-size: 13px; display: flex; align-items: center; justify-content: center;
+    transition: all .2s ease;
+  }
+  .theme-pill-btn.active {
+    background: var(--card); color: var(--text);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08); font-weight: 700;
+  }
+  .icon-btn {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--bg); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; text-decoration: none; color: var(--text);
+    font-size: 14px; font-weight: 700; transition: background .2s;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover { background: var(--bar); }
+
+  /* ===== Conteúdo Principal ===== */
+  .main { flex: 1; padding: 32px 40px 60px; max-width: 1100px; margin: 0 auto; width: 100%; }
+
+  /* Grelha de Estatísticas */
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .card { background: var(--card); border-radius: 14px; padding: 18px 20px; border: 1px solid var(--line); }
+  .card .lbl { font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 8px; }
+  .card .val { font-size: 26px; font-weight: 800; font-family: var(--mono); }
+
+  /* Chips / Filtros */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .chip {
+    font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 20px;
+    border: 1px solid var(--line); background: var(--card); color: var(--muted);
+    cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px; transition: all .15s ease;
+  }
+  .chip .led { width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .5; }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chip.active .led { opacity: 1; background: #fff; }
+  .chip:hover:not(.active) { background: var(--bar); color: var(--text); }
+
+  /* Painel / Tabela */
+  .panel-box { background: var(--card); border-radius: 16px; border: 1px solid var(--line); padding: 22px 24px; overflow: hidden; }
+  .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+  .panel-head h2 { font-size: 16px; font-weight: 700; }
+  
+  .panel-controls { display: flex; align-items: center; gap: 12px; }
+  .panel-head .hint { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+
+  .select-custom {
+    font-family: inherit; font-size: 12.5px; font-weight: 600;
+    padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--bg); color: var(--text); cursor: pointer;
+    outline: none; transition: border-color .2s;
+  }
+  .select-custom:focus { border-color: var(--accent); }
+
+  .table-responsive { width: 100%; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; }
+  th {
+    font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .05em; padding: 12px 14px; border-bottom: 1px solid var(--line);
+  }
+  td { padding: 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  
+  td.proto { font-family: var(--mono); font-size: 12px; font-weight: 700; }
+  .game-cell { display: flex; align-items: center; gap: 12px; }
+  .game-cell img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: var(--bar); flex-shrink: 0; }
+  .game-title { font-weight: 600; color: var(--text); }
+  .game-title a { color: inherit; text-decoration: none; }
+  .game-title a:hover { color: var(--accent); text-decoration: underline; }
+  
+  .new-badge {
+    display: inline-block; margin-left: 8px; font-family: var(--mono); font-size: 10px;
+    text-transform: uppercase; color: #fff; background: var(--green); padding: 2px 7px;
+    border-radius: 12px; font-weight: 700; vertical-align: middle;
+  }
+  
+  td.date-cell { font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+  .ttl { font-family: var(--mono); font-size: 13px; font-weight: 600; }
+  .ttl.soon { color: var(--yellow); }
+  .ttl.perm { color: var(--muted); }
+  .ttl.off { color: var(--red); }
+
+  .empty-row td { padding: 32px 14px; text-align: center; color: var(--muted); font-weight: 500; }
+  .error-banner {
+    margin-bottom: 16px; padding: 12px 16px; border-radius: 10px;
+    background: rgba(224, 72, 72, 0.1); border: 1px solid var(--red);
+    color: var(--red); font-size: 13px; font-weight: 500;
+  }
+
+  /* Modal de Confirmação */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; padding: 16px;
+  }
+  .modal-overlay.active { opacity: 1; pointer-events: auto; }
+  .modal {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+    padding: 24px; width: 100%; max-width: 360px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  }
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .modal p { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.4; }
+  .modal input {
+    width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--card); color: var(--text); font-size: 14px; margin-bottom: 16px; outline: none;
+  }
+  .modal input:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .modal-btn { padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; }
+  .modal-btn.cancel { background: var(--card); color: var(--text); border: 1px solid var(--line); }
+  .modal-btn.confirm { background: var(--accent2); color: #fff; }
+
+  footer { margin-top: 32px; font-size: 12.5px; color: var(--muted); text-align: center; }
+
+  @media (max-width: 900px) {
+    .mobile-header { display: flex; }
+    .close-sidebar-btn { display: block; }
+    .sidebar-overlay { display: block; }
+
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      transform: translateX(-100%);
+      box-shadow: 5px 0 25px rgba(0,0,0,0.15);
+      height: 100vh;
+    }
+    .sidebar.open { transform: translateX(0); }
+
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .main { padding: 24px 16px 40px; margin-top: var(--header-height); }
+    thead th:nth-child(3), td.date-cell.since { display: none; }
+  }
+</style>
+
+<!-- Script Inline Preventivo para evitar flash de tema incorreto ao carregar -->
+<script>
+  (function() {
+    var savedTheme = localStorage.getItem('fgw_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  })();
+</script>
+</head>
+<body>
+
+<!-- Cabeçalho Mobile -->
+<header class="mobile-header">
+  <a href="https://donodaseves.github.io/freegames/" target="_blank" rel="noopener" class="brand">dase<span>/games</span></a>
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Abrir menu">☰</button>
+</header>
+
+<!-- Overlay do Menu Mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="brand">
+      <a href="https://donodaseves.github.io/freegames/" target="_blank" rel="noopener" onclick="closeSidebar()">dase<span>/games</span></a>
+    </div>
+    <button class="close-sidebar-btn" onclick="closeSidebar()" aria-label="Fechar">✕</button>
+  </div>
+
+  <div class="side-controls">
+    <button class="btn btn-primary" id="refreshBtn" onclick="closeSidebar()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v6h-6"/></svg>
+      Sincronizar
+    </button>
+    <button class="btn" id="clearNewBtn" title="Marcar todos como vistos" onclick="closeSidebar()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+      Limpar "Novo"
+    </button>
+  </div>
+
+  <div class="toggle-box">
+    <label>
+      <input type="checkbox" id="notifyToggle">
+      Notificar novos
+    </label>
+    <span id="notifyStatus" style="font-size: 11px;"></span>
+  </div>
+
+  <!-- Rodapé da Sidebar exato ao uibase.html -->
+  <div class="sidebar-footer">
+    <div class="storage-indicator">
+      <div class="storage-header">
+        <span>Armazenamento</span>
+        <span id="storageText">0 KB / 5 MB</span>
+      </div>
+      <div class="storage-bar-track">
+        <div class="storage-bar-fill" id="storageBar"></div>
+      </div>
+    </div>
+
+    <button class="reset-btn" onclick="openResetModal()">↺ Repor</button>
+
+    <div class="user-box">
+      <div class="theme-pill-switch">
+        <button class="theme-pill-btn active" id="btnLight" onclick="setTheme('light')" aria-label="Modo Claro">☀</button>
+        <button class="theme-pill-btn" id="btnDark" onclick="setTheme('dark')" aria-label="Modo Escuro">☾</button>
+      </div>
+      <a href="https://donodaseves.github.io/dase/" class="icon-btn" title="Ir para o site">D</a>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="grid">
+    <div class="card">
+      <div class="lbl">Ativos Agora</div>
+      <div class="val" id="statActive">–</div>
+    </div>
+    <div class="card">
+      <div class="lbl">Terminam (≤3d)</div>
+      <div class="val" id="statSoon" style="color: var(--yellow);">–</div>
+    </div>
+    <div class="card">
+      <div class="lbl">Sem Prazo</div>
+      <div class="val" id="statPerm">–</div>
+    </div>
+    <div class="card">
+      <div class="lbl">Última Sinc.</div>
+      <div class="val" id="statUpdated" style="font-size: 20px;">–</div>
+    </div>
+  </div>
+
+  <div id="errorBanner"></div>
+
+  <div class="chips" id="chips"></div>
+
+  <div class="panel-box">
+    <div class="panel-head">
+      <h2>Lista de Jogos</h2>
+      <div class="panel-controls">
+        <select id="sortSelect" class="select-custom">
+          <option value="expires">Ordenar por: Data de Expiração</option>
+          <option value="title">Ordenar por: Título (A-Z)</option>
+          <option value="published">Ordenar por: Data de Publicação</option>
+        </select>
+        <span class="hint" id="liveCount">0 itens</span>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 15%;">Plataforma</th>
+            <th>Jogo</th>
+            <th style="width: 20%;" class="since-col">Desde</th>
+            <th style="width: 20%;">Tempo Restante</th>
+          </tr>
+        </thead>
+        <tbody id="liveBody">
+          <tr class="empty-row"><td colspan="4">A ligar a gamerpower.com …</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>Projeto pessoal, desenvolvido com apoio de IA. Sem suporte ou correções de erros fornecidos.</footer>
+</div>
+
+<!-- Modal de Confirmação para Reposição -->
+<div class="modal-overlay" id="resetModal">
+  <div class="modal">
+    <h3>Repor LocalStorage</h3>
+    <p>Escreve <strong>"dase"</strong> para confirmar.</p>
+    <input type="text" id="confirmInput" placeholder="dase" autocomplete="off" />
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeResetModal()">Cancelar</button>
+      <button class="modal-btn confirm" onclick="confirmReset()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Controlo da Sidebar Mobile */
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('active');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('active');
+}
+
+/* Gestão de Tema com persistência no localStorage */
+function setTheme(mode) {
+  const root = document.documentElement;
+  root.setAttribute('data-theme', mode === 'dark' ? 'dark' : 'light');
+  document.getElementById('btnLight').classList.toggle('active', mode === 'light');
+  document.getElementById('btnDark').classList.toggle('active', mode === 'dark');
+  try {
+    localStorage.setItem('fgw_theme', mode);
+    updateStorageVisualizer();
+  } catch(e) {}
+}
+
+// Inicializar estado correto dos botões de tema com base no localStorage
+(function initThemeUI() {
+  const currentTheme = localStorage.getItem('fgw_theme') || 'light';
+  document.getElementById('btnLight').classList.toggle('active', currentTheme === 'light');
+  document.getElementById('btnDark').classList.toggle('active', currentTheme === 'dark');
+})();
+
+/* Atualizar Visualizador de Armazenamento */
+function updateStorageVisualizer() {
+  let totalBytes = 0;
+  for (let key in localStorage) {
+    if (localStorage.hasOwnProperty(key)) {
+      totalBytes += ((localStorage[key].length + key.length) * 2);
+    }
+  }
+  const maxBytes = 5 * 1024 * 1024;
+  const kb = (totalBytes / 1024).toFixed(1);
+  const percentage = Math.min((totalBytes / maxBytes) * 100, 100).toFixed(1);
+
+  if(document.getElementById('storageText')) {
+    document.getElementById('storageText').innerText = `${kb} KB (${percentage}%)`;
+    document.getElementById('storageBar').style.width = `${Math.max(percentage, 2)}%`;
+  }
+}
+
+/* Modal de Repor */
+function openResetModal() {
+  closeSidebar();
+  document.getElementById('resetModal').classList.add('active');
+  document.getElementById('confirmInput').value = '';
+  document.getElementById('confirmInput').focus();
+}
+
+function closeResetModal() {
+  document.getElementById('resetModal').classList.remove('active');
+}
+
+function confirmReset() {
+  const input = document.getElementById('confirmInput').value.trim();
+  if (input === 'dase') {
+    localStorage.clear();
+    location.reload();
+  } else {
+    alert('Incorreto. Escreve "dase" para confirmar.');
+  }
+}
+
+(function(){
+  "use strict";
+
+  var PLATFORMS = [
+    { key:"steam",  api:"steam",              label:"steam",  color:"#66c0f4" },
+    { key:"epic",   api:"epic-games-store",   label:"epic",   color:"#a0a0a0" },
+    { key:"gog",    api:"gog",                label:"gog",    color:"#a06fdb" },
+    { key:"ps4",    api:"ps4",                label:"ps4",    color:"#2F5EFF" },
+    { key:"ps5",    api:"ps5",                label:"ps5",    color:"#2F5EFF" },
+    { key:"itchio", api:"itchio",             label:"itch",   color:"#fa5c5c" }
+  ];
+
+  var CACHE_KEY = "fgw_cache_v2";
+  var CACHE_TTL_MS = 15 * 60 * 1000;
+  var SEEN_KEY = "fgw_seen_v2";
+  var NOTIFY_KEY = "fgw_notify_v1";
+
+  var state = {
+    live: [],
+    activePlatforms: PLATFORMS.map(function(p){ return p.key; }),
+    lastSync: null,
+    sortBy: "expires",
+    notifyEnabled: localStorage.getItem(NOTIFY_KEY) === "1"
+  };
+
+  function $(id){ return document.getElementById(id); }
+  function pad(n){ return n < 10 ? "0"+n : ""+n; }
+  function fmtDate(d){
+    if(!d) return "—";
+    return pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear();
+  }
+  function parseDate(str){
+    if(!str) return null;
+    var s = String(str).trim();
+    if(!s || s.toUpperCase() === "N/A") return null;
+    var d = new Date(s.length <= 10 ? s + "T00:00:00" : s);
+    if(isNaN(d.getTime())) return null;
+    return d;
+  }
+  function daysBetween(a, b){
+    var MS = 24*60*60*1000;
+    return Math.round((b.setHours(0,0,0,0) - a.setHours(0,0,0,0)) / MS);
+  }
+  function ttlInfo(endDate){
+    if(!endDate) return { label:"sem prazo", cls:"perm", days:Infinity };
+    var today = new Date();
+    var days = daysBetween(new Date(today), new Date(endDate));
+    if(days < 0) return { label:"expirado", cls:"off", days: days };
+    if(days === 0) return { label:"termina hoje", cls:"soon", days: 0 };
+    if(days <= 3) return { label: days + "d restantes", cls:"soon", days: days };
+    return { label: days + "d restantes", cls:"on", days: days };
+  }
+  function escapeHtml(s){
+    return String(s || "").replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function cleanTitle(title){
+    var t = String(title || "");
+    var patterns = [
+      /\s*giveaway\s*$/i,
+      /\s*\((steam\vert{}epic games( store)?\vert{}gog\vert{}playstation\s*4\vert{}playstation\s*5\vert{}ps4\vert{}ps5\vert{}itch\.io\vert{}itch\vert{}ubisoft\vert{}ea\vert{}origin\vert{}indie ?gala\vert{}microsoft store)\)\s*$/i
+    ];
+    var changed = true;
+    while(changed){
+      changed = false;
+      patterns.forEach(function(re){
+        var next = t.replace(re, "");
+        if(next !== t){ t = next; changed = true; }
+      });
+    }
+    return t.trim();
+  }
+
+  function loadSeenMap(){
+    try{
+      var raw = localStorage.getItem(SEEN_KEY);
+      return raw ? JSON.parse(raw) : {};
+    }catch(e){ return {}; }
+  }
+  function saveSeenMap(map){
+    try{ 
+      localStorage.setItem(SEEN_KEY, JSON.stringify(map)); 
+      updateStorageVisualizer();
+    }catch(e){}
+  }
+
+  function renderChips(){
+    var wrap = $("chips");
+    wrap.innerHTML = "";
+    PLATFORMS.forEach(function(p){
+      var active = state.activePlatforms.indexOf(p.key) > -1;
+      var chip = document.createElement("div");
+      chip.className = "chip" + (active ? " active" : "");
+      chip.innerHTML = '<span class="led" style="color:'+p.color+'"></span>' + p.label;
+      chip.addEventListener("click", function(){
+        var idx = state.activePlatforms.indexOf(p.key);
+        if(idx > -1) state.activePlatforms.splice(idx,1);
+        else state.activePlatforms.push(p.key);
+        renderChips();
+        renderLive();
+      });
+      wrap.appendChild(chip);
+    });
+  }
+
+  function updateNotifyStatus(){
+    var el = $("notifyStatus");
+    if(!("Notification" in window)){ el.textContent = "Não suportado"; return; }
+    if(Notification.permission === "denied"){ el.textContent = "Bloqueado"; return; }
+    el.textContent = state.notifyEnabled ? "Ativado" : "Desativado";
+  }
+  function initNotifyToggle(){
+    var toggle = $("notifyToggle");
+    if(!toggle) return;
+    toggle.checked = state.notifyEnabled;
+    updateNotifyStatus();
+    toggle.addEventListener("change", function(){
+      if(!toggle.checked){
+        state.notifyEnabled = false;
+        localStorage.setItem(NOTIFY_KEY, "0");
+        updateNotifyStatus();
+        return;
+      }
+      if(!("Notification" in window)){
+        toggle.checked = false;
+        updateNotifyStatus();
+        return;
+      }
+      if(Notification.permission === "granted"){
+        state.notifyEnabled = true;
+        localStorage.setItem(NOTIFY_KEY, "1");
+        updateNotifyStatus();
+      } else if(Notification.permission === "denied"){
+        toggle.checked = false;
+        updateNotifyStatus();
+      } else {
+        Notification.requestPermission().then(function(perm){
+          if(perm === "granted"){
+            state.notifyEnabled = true;
+            localStorage.setItem(NOTIFY_KEY, "1");
+          } else {
+            toggle.checked = false;
+            state.notifyEnabled = false;
+          }
+          updateNotifyStatus();
+        });
+      }
+    });
+  }
+
+  function maybeNotify(newGames){
+    if(!state.notifyEnabled) return;
+    if(!("Notification" in window) || Notification.permission !== "granted") return;
+    if(!newGames.length) return;
+    var names = newGames.slice(0, 3).map(function(g){ return g.title; }).join(", ");
+    var body = newGames.length + (newGames.length === 1 ? " novo jogo: " : " novos jogos: ") + names + (newGames.length > 3 ? "…" : "");
+    try{
+      var n = new Notification("dase/games", {
+        body: body,
+        icon: "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>",
+        tag: "fgw-new"
+      });
+      n.onclick = function(){ window.focus(); n.close(); };
+    }catch(e){}
+  }
+
+  function fetchPlatform(p){
+    var url = "https://www.gamerpower.com/api/giveaways?platform=" + encodeURIComponent(p.api) + "&type=game";
+    return fetch(url).then(function(r){
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function(data){
+      if(!Array.isArray(data)) return [];
+      return data.map(function(g){
+        return {
+          id: String(g.id),
+          title: cleanTitle(g.title) || "Sem Título",
+          image: g.thumbnail || g.image || "",
+          url: g.open_giveaway_url || g.gamerpower_url || "#",
+          entered: parseDate(g.published_date),
+          expires: parseDate(g.end_date),
+          platformKey: p.key,
+          platformLabel: p.label
+        };
+      });
+    }).catch(function(err){
+      console.warn("falha " + p.key, err);
+      return { __error: p.key };
+    });
+  }
+
+  function persistCache(){
+    try{
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        ts: state.lastSync.getTime(),
+        games: state.live.map(function(g){
+          return {
+            id:g.id, title:g.title, image:g.image, url:g.url, isNew:g.isNew,
+            entered: g.entered ? g.entered.toISOString() : null,
+            expires: g.expires ? g.expires.toISOString() : null,
+            platformKey:g.platformKey, platformLabel:g.platformLabel
+          };
+        })
+      }));
+      updateStorageVisualizer();
+    }catch(e){}
+  }
+
+  function loadLive(useCache){
+    if(useCache){
+      try{
+        var raw = localStorage.getItem(CACHE_KEY);
+        if(raw){
+          var cached = JSON.parse(raw);
+          if(cached.ts && (Date.now() - cached.ts) < CACHE_TTL_MS){
+            state.live = (cached.games||[]).map(function(g){
+              g.title = cleanTitle(g.title);
+              g.entered = g.entered ? new Date(g.entered) : null;
+              g.expires = g.expires ? new Date(g.expires) : null;
+              return g;
+            });
+            state.lastSync = new Date(cached.ts);
+            
+            var seenMap = loadSeenMap();
+            state.live.forEach(function(g){
+              g.isNew = !seenMap[g.id];
+            });
+
+            renderLive();
+            renderStats();
+            updateStorageVisualizer();
+            return Promise.resolve();
+          }
+        }
+      }catch(e){}
+    }
+    return doSync(false);
+  }
+
+  function clearAllNewTags(){
+    var seenMap = loadSeenMap();
+    state.live.forEach(function(g){
+      g.isNew = false;
+      seenMap[g.id] = true;
+    });
+    saveSeenMap(seenMap);
+    persistCache();
+    renderLive();
+  }
+
+  function doSync(forceSync){
+    var btn = $("refreshBtn");
+    btn.classList.add("spinning");
+    $("errorBanner").innerHTML = "";
+    var mainFetches = PLATFORMS.map(fetchPlatform);
+    return Promise.all(mainFetches).then(function(mainResults){
+      var games = [];
+      var failed = [];
+      var seenIds = {};
+      
+      mainResults.forEach(function(r, i){
+        var label = PLATFORMS[i].label;
+        if(r && r.__error){ failed.push(label); return; }
+        (r||[]).forEach(function(g){
+          if(!seenIds[g.id]){ seenIds[g.id] = true; games.push(g); }
+        });
+      });
+
+      var seenMap = loadSeenMap();
+      var isFirstRun = Object.keys(seenMap).length === 0;
+      var newlyDiscovered = [];
+
+      games.forEach(function(g){
+        if(!seenMap[g.id]){
+          g.isNew = true;
+          newlyDiscovered.push(g);
+        } else {
+          g.isNew = false;
+        }
+      });
+
+      if(!isFirstRun && newlyDiscovered.length > 0){
+        maybeNotify(newlyDiscovered);
+      }
+
+      state.live = games;
+      state.lastSync = new Date();
+      persistCache();
+      
+      if(failed.length){
+        $("errorBanner").innerHTML =
+          '<div class="error-banner">⚠ Não foi possível sincronizar: ' + failed.join(", ") +
+          ". Outros dados foram carregados.</div>";
+      }
+      renderLive();
+      renderStats();
+    }).catch(function(err){
+      $("errorBanner").innerHTML =
+        '<div class="error-banner">⚠ Não foi possível ligar a gamerpower.com. Verifique a ligação.</div>';
+    }).finally(function(){
+      btn.classList.remove("spinning");
+    });
+  }
+
+  function renderLive(){
+    var body = $("liveBody");
+    var rows = state.live.filter(function(g){
+      if(state.activePlatforms.indexOf(g.platformKey) === -1) return false;
+      var t = ttlInfo(g.expires);
+      if(t.cls === "off") return false;
+      return true;
+    });
+
+    rows.sort(function(a, b){
+      if(state.sortBy === "title"){
+        return a.title.localeCompare(b.title);
+      } else if(state.sortBy === "published"){
+        var da = a.entered ? a.entered.getTime() : 0;
+        var db = b.entered ? b.entered.getTime() : 0;
+        return db - da;
+      } else {
+        var ta = ttlInfo(a.expires).days;
+        var tb = ttlInfo(b.expires).days;
+        return ta - tb;
+      }
+    });
+
+    $("liveCount").textContent = rows.length + " itens";
+    if(!rows.length){
+      body.innerHTML = '<tr class="empty-row"><td colspan="4">Sem resultados — ajuste os filtros.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(function(g){
+      var t = ttlInfo(g.expires);
+      return '<tr>' +
+        '<td class="proto" style="color:' + platColor(g.platformKey) + '">' + g.platformLabel + '</td>' +
+        '<td><div class="game-cell">' +
+          (g.image ? '<img src="'+escapeHtml(g.image)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">' : '') +
+          '<div class="game-title"><a href="'+escapeHtml(g.url)+'" target="_blank" rel="noopener">'+escapeHtml(g.title)+'</a>' +
+          (g.isNew ? '<span class="new-badge">novo</span>' : '') +
+          '</div>' +
+        '</div></td>' +
+        '<td class="date-cell since">' + (g.entered ? fmtDate(g.entered) : "—") + '</td>' +
+        '<td class="ttl ' + t.cls + '">' + t.label + '</td>' +
+      '</tr>';
+    }).join("");
+  }
+
+  function platColor(key){
+    var p = PLATFORMS.filter(function(x){ return x.key === key; })[0];
+    return p ? p.color : "#8b93a1";
+  }
+
+  function renderStats(){
+    var actives = state.live.filter(function(g){ return ttlInfo(g.expires).cls !== "off"; });
+    var soon = state.live.filter(function(g){ return ttlInfo(g.expires).cls === "soon"; });
+    var perm = state.live.filter(function(g){ return ttlInfo(g.expires).cls === "perm"; });
+    $("statActive").textContent = actives.length;
+    $("statSoon").textContent = soon.length;
+    $("statPerm").textContent = perm.length;
+    $("statUpdated").textContent = state.lastSync ? (pad(state.lastSync.getHours())+":"+pad(state.lastSync.getMinutes())) : "–";
+  }
+
+  $("refreshBtn").addEventListener("click", function(){ doSync(true); });
+  $("clearNewBtn").addEventListener("click", function(){ clearAllNewTags(); });
+
+  $("sortSelect").addEventListener("change", function(e){
+    state.sortBy = e.target.value;
+    renderLive();
+  });
+
+  renderChips();
+  initNotifyToggle();
+  loadLive(true);
+  updateStorageVisualizer();
+  setInterval(function(){ doSync(false); }, 30 * 60 * 1000);
+
+})();
+</script>
+</body>
+</html>
