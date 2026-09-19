@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="pt-PT" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+<title>dase/ — Testador HTML</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F5F6FA;
+    --panel: #FFFFFF;
+    --card: #F5F6FA;
+    --sidebar: #FFFFFF;
+    --text: #14161C;
+    --muted: #767C8C;
+    --accent: #2F5EFF;
+    --accent-hover: #1E4BDD;
+    --accent2: #FF5A3C;
+    --ok: #1FAA6B;
+    --line: #E7E8EF;
+    --bar: #E2E5F5;
+    --modal-overlay: rgba(20, 22, 28, 0.45);
+    --header-height: 60px;
+
+    /* Syntax Highlighting Colors */
+    --hl-tag: #2F5EFF;
+    --hl-attr: #905;
+    --hl-val: #07a;
+    --hl-cmt: #708090;
+    --hl-entity: #6f42c1;
+  }
+  [data-theme="dark"] {
+    --bg: #0E0F14;
+    --panel: #14161D;
+    --card: #181A22;
+    --sidebar: #12131A;
+    --text: #F4F5F9;
+    --muted: #8B8FA3;
+    --line: #262834;
+    --bar: #21232D;
+    --modal-overlay: rgba(0, 0, 0, 0.7);
+
+    --hl-tag: #4D7BFF;
+    --hl-attr: #FF79C6;
+    --hl-val: #F1FA8C;
+    --hl-cmt: #6272A4;
+    --hl-entity: #BD93F9;
+  }
+
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+    transition: background .25s, color .25s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ===== Mobile Header Bar ===== */
+  .mobile-header {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--header-height);
+    background: var(--sidebar);
+    border-bottom: 1px solid var(--line);
+    padding: 0 16px;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 90;
+  }
+  .mobile-header .brand { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+  .mobile-header .brand span { color: var(--accent); }
+
+  .menu-toggle {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: background 0.2s;
+  }
+  .menu-toggle:hover { background: var(--card); }
+
+  /* ===== Mobile Backdrop Overlay ===== */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 98;
+    opacity: 0;
+    transition: opacity .3s ease;
+    pointer-events: none;
+  }
+  .sidebar-overlay.active { display: block; opacity: 1; pointer-events: auto; }
+
+  /* ===== Sidebar ===== */
+  .sidebar {
+    width: 240px;
+    background: var(--sidebar);
+    border-right: 1px solid var(--line);
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0;
+    height: 100vh;
+    flex-shrink: 0;
+    z-index: 99;
+    transition: transform .3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+  }
+  .brand { font-size: 21px; font-weight: 800; letter-spacing: -0.5px; }
+  .brand span { color: var(--accent); }
+
+  .close-sidebar-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  .nav { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .nav a, .nav button {
+    display: flex; align-items: center; gap: 12px;
+    text-decoration: none; color: var(--muted);
+    font-size: 14.5px; font-weight: 600;
+    padding: 12px 14px; border-radius: 10px;
+    border: none; background: transparent; cursor: pointer; text-align: left; width: 100%;
+    font-family: inherit;
+    transition: background 0.2s, color 0.2s;
+  }
+  .nav a .ico, .nav button .ico { font-size: 16px; width: 20px; text-align: center; }
+  .nav a.active, .nav button.active { background: var(--accent); color: #fff; }
+  .nav a:not(.active):hover, .nav button:not(.active):hover { background: var(--card); }
+
+  /* Controls at sidebar bottom */
+  .sidebar-footer {
+    display: flex; flex-direction: column; gap: 14px;
+    padding-top: 16px; border-top: 1px solid var(--line);
+  }
+
+  /* Storage Meter Indicator */
+  .storage-indicator {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .storage-header { display: flex; justify-content: space-between; }
+  .storage-bar-track {
+    height: 6px;
+    border-radius: 4px;
+    background: var(--bar);
+    overflow: hidden;
+  }
+  .storage-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+
+  .reset-btn {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all .2s ease;
+    font-family: inherit;
+  }
+  .reset-btn:hover {
+    background: var(--accent2);
+    color: #ffffff;
+    border-color: var(--accent2);
+  }
+
+  .user-box { display: flex; align-items: center; gap: 10px; }
+  .theme-pill-switch {
+    display: flex; align-items: center; background: var(--card);
+    border: 1px solid var(--line); border-radius: 20px; padding: 3px;
+    flex: 1; justify-content: space-between;
+  }
+  .theme-pill-btn {
+    flex: 1; border: none; background: transparent; color: var(--muted);
+    padding: 8px 0; border-radius: 16px; cursor: pointer;
+    font-size: 13px; display: flex; align-items: center; justify-content: center;
+    transition: all .2s ease;
+  }
+  .theme-pill-btn.active {
+    background: var(--sidebar); color: var(--text);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08); font-weight: 700;
+  }
+  .icon-btn {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--card); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; text-decoration: none; color: var(--text);
+    font-size: 14px; font-weight: 700; transition: background .2s;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover { background: var(--bar); }
+
+  /* ===== Main (app shell — altura fixa à viewport, sem scroll de página) ===== */
+  .main {
+    margin-left: 240px;
+    width: calc(100% - 240px);
+    min-width: 0;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 26px 40px 18px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    border: 1px solid var(--line); background: var(--card); color: var(--text);
+    font-family: inherit; font-size: 13px; font-weight: 700;
+    padding: 10px 16px; border-radius: 12px; cursor: pointer; transition: all .2s;
+    white-space: nowrap; touch-action: manipulation;
+  }
+  .btn:hover { background: var(--bar); }
+  .btn:active { transform: scale(0.98); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .btn.danger { color: var(--accent2); }
+  .btn.danger:hover { background: rgba(255, 90, 60, 0.1); }
+  .btn.small { padding: 8px 12px; font-size: 12.5px; border-radius: 10px; }
+  .btn.icon-only { padding: 8px; min-width: 34px; min-height: 34px; }
+  .btn.active-toggle { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .vector-ico {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .count-badge {
+    background: var(--accent2);
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 800;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 5px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  /* ===== Barra superior compacta (substitui o hero/grid gigantes) ===== */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding-bottom: 16px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+    flex-shrink: 0;
+  }
+  .file-meta { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .file-name {
+    font-size: 15px; font-weight: 700;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    max-width: 260px;
+  }
+  .badge {
+    background: var(--bar); color: var(--accent);
+    padding: 4px 11px; border-radius: 20px;
+    font-size: 11.5px; font-weight: 700; white-space: nowrap;
+  }
+  .stat-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    background: var(--card); border: 1px solid var(--line);
+    padding: 5px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap;
+  }
+  .chip.error { color: var(--accent2); border-color: rgba(255,90,60,.3); background: rgba(255,90,60,.08); }
+  .chip.ok { color: var(--ok); }
+
+  .topbar-actions { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+
+  /* ===== Abas mobile (Editor / Preview / Consola) ===== */
+  .tabs-mobile {
+    display: none;
+    gap: 6px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+  }
+  .tab-btn {
+    flex: 1; border: none; background: transparent; color: var(--muted);
+    padding: 9px 0; border-radius: 9px;
+    font-weight: 700; font-size: 12.5px; cursor: pointer; font-family: inherit;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    position: relative;
+  }
+  .tab-btn.active { background: var(--accent); color: #fff; }
+  .tab-btn .count-badge { position: absolute; top: 2px; right: 10px; }
+
+  /* ===== Workspace: editor + preview lado a lado, altura fixa e com scroll interno ===== */
+  .workspace {
+    display: flex;
+    gap: 16px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .panel {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    background: var(--card);
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  .panel-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; flex-shrink: 0; }
+  .panel-title { font-size: 14.5px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+
+  .search-box {
+    display: flex; align-items: center; gap: 4px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 5px 6px 5px 12px; flex: 1; min-width: 160px;
+  }
+  .search-box .ico { color: var(--muted); font-size: 13px; }
+  .search-box input {
+    border: none; outline: none; background: transparent; color: var(--text);
+    font-size: 13px; flex: 1; font-family: inherit; min-width: 50px;
+  }
+  .search-count { font-size: 11px; color: var(--muted); white-space: nowrap; padding: 0 4px; }
+  .search-box button {
+    border: none; background: transparent; color: var(--muted); cursor: pointer;
+    font-size: 13px; padding: 5px 8px; border-radius: 6px; font-family: inherit;
+  }
+  .search-box button:hover { background: var(--bar); color: var(--text); }
+  .search-box button:disabled { opacity: .4; cursor: default; }
+  .search-box button:disabled:hover { background: transparent; color: var(--muted); }
+
+  .device-switch { display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 3px; max-width: 100%; overflow-x: auto; }
+  .device-switch button {
+    border: none; background: transparent; color: var(--muted); font-size: 12px; font-weight: 600;
+    padding: 6px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px;
+    font-family: inherit; white-space: nowrap;
+  }
+  .device-switch button.active { background: var(--accent); color: #fff; }
+  .device-switch button:not(.active):hover { background: var(--bar); }
+
+  /* ===== Editor com números de linha e realce de sintaxe (limitado à sua caixa, scroll interno) ===== */
+  .editor-container {
+    position: relative;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .editor-container:focus-within { border-color: var(--accent); }
+
+  .line-numbers {
+    width: 42px;
+    background: var(--card);
+    border-right: 1px solid var(--line);
+    color: var(--muted);
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    padding: 14px 0;
+    text-align: right;
+    user-select: none;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .line-numbers div { padding-right: 10px; }
+
+  .editor-area {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .editor-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 14px 16px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    tab-size: 2;
+    white-space: pre;
+    overflow: auto;
+    word-wrap: normal;
+  }
+
+  #highlighting {
+    pointer-events: none;
+    color: var(--text);
+    z-index: 1;
+  }
+
+  #editor {
+    z-index: 2;
+    background: transparent;
+    color: transparent;
+    caret-color: var(--text);
+    border: none;
+    outline: none;
+    resize: none;
+  }
+
+  /* Syntax Highlighting Token Styles */
+  .hl-tag { color: var(--hl-tag); font-weight: 600; }
+  .hl-attr { color: var(--hl-attr); }
+  .hl-val { color: var(--hl-val); }
+  .hl-cmt { color: var(--hl-cmt); font-style: italic; }
+  .hl-entity { color: var(--hl-entity); }
+
+  .preview-stage {
+    flex: 1; min-height: 0;
+    display: flex; justify-content: center; align-items: stretch;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 12px;
+    padding: 10px; overflow: auto; position: relative;
+  }
+  .device-frame {
+    display: flex; width: 100%; height: 100%; min-height: 260px;
+    border-radius: 10px; overflow: hidden; background: #fff;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    transition: width .25s ease;
+    margin: 0 auto;
+  }
+  .device-frame.mobile { width: 375px; max-width: 100%; }
+  .device-frame.tablet { width: 768px; max-width: 100%; }
+  .device-frame.desktop { width: 100%; }
+  #previewFrame { width: 100%; height: 100%; border: none; display: block; background: #fff; }
+
+  /* Fullscreen preview */
+  #previewPanel.fullscreen-active {
+    position: fixed; inset: 0; z-index: 9999;
+    width: 100vw; height: 100vh; margin: 0; border-radius: 0;
+    padding: 16px 20px; background: var(--panel);
+    display: flex !important;
+  }
+
+  /* ===== Gaveta da consola: fechada por omissão, altura limitada quando aberta ===== */
+  .console-drawer {
+    flex-shrink: 0;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    margin-top: 14px;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: max-height .3s ease, opacity .2s ease, margin-top .3s ease;
+  }
+  .console-drawer.open { max-height: 280px; opacity: 1; }
+  .console-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-bottom: 1px solid var(--line);
+    font-size: 13.5px; font-weight: 700; flex-shrink: 0; gap: 8px;
+  }
+  .console-header .left-group { display: flex; align-items: center; gap: 8px; }
+  .console-actions { display: flex; gap: 6px; }
+  .console-box { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 16px; }
+  .empty-state { color: var(--muted); font-size: 13px; text-align: center; padding: 30px 0; }
+
+  /* Console row styling */
+  .list-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+    gap: 12px;
+  }
+  .list-row:last-child { border-bottom: none; }
+  .list-row .left { display: flex; align-items: center; gap: 10px; font-family: monospace; min-width: 0; }
+  .list-row .ico-box { font-size: 14px; flex-shrink: 0; }
+  .list-row .msg { overflow-wrap: anywhere; }
+  .list-row .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .pill {
+    padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;
+    background: var(--panel); color: var(--muted); text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .pill.error { background: rgba(255, 90, 60, 0.15); color: var(--accent2); }
+  .pill.warn { background: rgba(255, 170, 0, 0.15); color: #d97706; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--muted);
+    padding-top: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Modais */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--modal-overlay);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease;
+  }
+  .modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 360px;
+    padding: 24px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  }
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .modal p { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.4; }
+  .modal input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    font-size: 14px;
+    margin-bottom: 16px;
+    outline: none;
+  }
+  .modal input[type="text"]:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .modal-btn {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .modal-btn.cancel { background: var(--card); color: var(--text); border: 1px solid var(--line); }
+  .modal-btn.confirm { background: var(--accent2); color: #fff; }
+
+  @media (max-width: 900px) {
+    .mobile-header { display: flex; }
+    .close-sidebar-btn { display: block; }
+    .sidebar {
+      transform: translateX(-100%);
+      box-shadow: 5px 0 25px rgba(0,0,0,0.15);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; width: 100%; height: calc(100vh - var(--header-height)); height: calc(100dvh - var(--header-height)); margin-top: var(--header-height); }
+    .content { padding: 16px 16px 12px; }
+
+    .topbar { padding-bottom: 12px; margin-bottom: 10px; }
+    .file-name { max-width: 150px; }
+    .stat-chips { order: 3; width: 100%; }
+    .topbar-actions { margin-left: 0; width: 100%; }
+    .topbar-actions .btn { flex: 1; }
+    #consoleToggleBtn { display: none; }
+
+    .tabs-mobile { display: flex; }
+
+    .workspace { flex-direction: column; }
+    .panel { display: none; }
+    .panel.active { display: flex; }
+
+    .console-drawer { display: none; margin-top: 0; }
+    .console-drawer.active { display: flex; flex: 1; min-height: 0; max-height: none; opacity: 1; }
+  }
+
+  @media (max-width: 480px) {
+    .file-name { max-width: 110px; }
+    .badge { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Mobile Header Navigation -->
+<header class="mobile-header">
+  <div class="brand">dase<span>/</span></div>
+  <button class="menu-toggle" id="hamburgerBtn" aria-label="Abrir menu">☰</button>
+</header>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- Sidebar Menu -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="brand">dase<span>/</span></div>
+    <button class="close-sidebar-btn" id="closeSidebarBtn" aria-label="Fechar">✕</button>
+  </div>
+  <nav class="nav">
+    <button type="button" class="active" id="navEditor"><span class="ico">📝</span> Editor</button>
+    <button type="button" id="navPreview"><span class="ico">👁️</span> Pré-visualização</button>
+    <button type="button" id="navConsole"><span class="ico">💬</span> Consola</button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="storage-indicator">
+      <div class="storage-header">
+        <span>Armazenamento</span>
+        <span id="storageText">0 KB / 5 MB</span>
+      </div>
+      <div class="storage-bar-track">
+        <div class="storage-bar-fill" id="storageBar"></div>
+      </div>
+    </div>
+
+    <button class="reset-btn" onclick="openResetModal()">↺ Repor</button>
+
+    <div class="user-box">
+      <div class="theme-pill-switch">
+        <button class="theme-pill-btn active" id="btnLight" onclick="setTheme('light')" aria-label="Modo Claro">☀</button>
+        <button class="theme-pill-btn" id="btnDark" onclick="setTheme('dark')" aria-label="Modo Escuro">☾</button>
+      </div>
+      <a href="https://donodaseves.github.io/dase/" class="icon-btn" title="Ir para o site">D</a>
+    </div>
+  </div>
+</div>
+
+<!-- Main Area -->
+<div class="main">
+<div class="content">
+
+  <!-- Barra superior compacta: ficheiro, estatísticas e ações globais -->
+  <div class="topbar">
+    <div class="file-meta">
+      <span class="file-name" id="heroFileName" title="Nenhum ficheiro carregado">Nenhum ficheiro carregado</span>
+      <span class="badge" id="heroBadge">Pronto</span>
+    </div>
+    <div class="stat-chips">
+      <span class="chip"><span id="statLines">0</span> linhas</span>
+      <span class="chip"><span id="statSize">0 KB</span></span>
+      <span class="chip ok" id="errChip"><span id="statErrors">0</span> erros</span>
+    </div>
+    <div class="topbar-actions">
+      <input type="file" id="fileInput" accept=".html,.htm,text/html" style="display:none">
+      <button class="btn small" id="loadBtn">
+        <svg class="vector-ico" viewBox="0 0 24 24"><path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2z"/></svg> Importar
+      </button>
+      <button class="btn small primary" id="editorDownloadBtn">⬇ Exportar</button>
+      <button class="btn small" id="consoleToggleBtn">
+        💬 Consola <span class="count-badge" id="consoleBadge" style="display:none">0</span>
+      </button>
+      <button class="btn small danger icon-only" id="clearBtn" title="Limpar editor">
+        <svg class="vector-ico" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Abas mobile -->
+  <div class="tabs-mobile" id="tabsMobile">
+    <button class="tab-btn active" data-panel="editor">📝 Editor</button>
+    <button class="tab-btn" data-panel="preview">👁️ Preview</button>
+    <button class="tab-btn" data-panel="console">💬 Consola <span class="count-badge" id="consoleBadgeMobile" style="display:none">0</span></button>
+  </div>
+
+  <!-- Workspace: Editor + Preview, altura fixa à janela -->
+  <div class="workspace" id="workspace">
+
+    <!-- Editor -->
+    <div class="panel active" id="editorPanel" data-panel="editor">
+      <div class="panel-toolbar">
+        <div class="search-box">
+          <span class="ico">🔍</span>
+          <input type="text" id="searchInput" placeholder="Pesquisar..." autocomplete="off">
+          <span class="search-count" id="searchCount"></span>
+          <button id="searchPrev" title="Anterior (Shift+Enter)" disabled>↑</button>
+          <button id="searchNext" title="Seguinte (Enter)" disabled>↓</button>
+        </div>
+      </div>
+
+      <div class="editor-container">
+        <div class="line-numbers" id="lineNumbers"><div>1</div></div>
+        <div class="editor-area">
+          <pre id="highlighting" class="editor-layer" aria-hidden="true"></pre>
+          <textarea id="editor" class="editor-layer" spellcheck="false" placeholder="Escreva ou cole o código HTML aqui..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div class="panel" id="previewPanel" data-panel="preview">
+      <div class="panel-toolbar">
+        <div class="panel-title">
+          Pré-visualização
+          <button class="btn small" id="fullscreenBtn">⛶ Ecrã inteiro</button>
+        </div>
+        <div class="device-switch" id="deviceSwitch">
+          <button data-device="mobile" title="Telemóvel">📱</button>
+          <button data-device="tablet" title="Tablet">📟</button>
+          <button data-device="desktop" class="active" title="Desktop">🖥</button>
+        </div>
+        <button class="btn small danger" onclick="resetPreviewStorage()">↺ Reset LocalStorage</button>
+      </div>
+      <div class="preview-stage">
+        <div class="device-frame desktop" id="deviceFrame">
+          <iframe id="previewFrame" sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin" title="Pré-visualização HTML"></iframe>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Consola: gaveta fechada por omissão, altura limitada (nunca cresce a página) -->
+  <div class="console-drawer" id="consoleDrawer" data-panel="console">
+    <div class="console-header">
+      <span class="left-group">💬 Consola de logs</span>
+      <div class="console-actions">
+        <button class="btn small danger icon-only" onclick="clearConsole()" title="Limpar consola">
+          <svg class="vector-ico" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+        </button>
+        <button class="btn small icon-only" id="closeConsoleBtn" title="Fechar consola">✕</button>
+      </div>
+    </div>
+    <div class="console-box" id="consoleList">
+      <div class="empty-state">Sem mensagens ainda.</div>
+    </div>
+  </div>
+
+  <footer>
+    Projeto pessoal, desenvolvido com apoio de IA. Sem suporte ou correções de erros fornecidos.
+  </footer>
+
+</div>
+</div>
+
+<!-- Modal Reset LocalStorage (Aplicação inteira) -->
+<div class="modal-overlay" id="resetModal">
+  <div class="modal">
+    <h3>Repor LocalStorage</h3>
+    <p>Escreve <strong>"dase"</strong> para confirmar.</p>
+    <input type="text" id="confirmInput" placeholder="dase" autocomplete="off" />
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeResetModal()">Cancelar</button>
+      <button class="modal-btn confirm" onclick="confirmReset()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Escolher Nome para Download -->
+<div class="modal-overlay" id="downloadModal">
+  <div class="modal">
+    <h3>Exportar Ficheiro</h3>
+    <p>Escolha o nome para guardar o ficheiro HTML.</p>
+    <input type="text" id="fileNameInput" placeholder="index.html" autocomplete="off">
+    <div class="modal-actions">
+      <button class="modal-btn cancel" id="cancelDownloadBtn">Cancelar</button>
+      <button class="modal-btn confirm" id="confirmDownloadBtn" style="background:var(--accent);">Exportar</button>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript Core Logic -->
+<script>
+  function setTheme(mode) {
+    const root = document.documentElement;
+    root.setAttribute('data-theme', mode === 'dark' ? 'dark' : 'light');
+    document.getElementById('btnLight').classList.toggle('active', mode === 'light');
+    document.getElementById('btnDark').classList.toggle('active', mode === 'dark');
+  }
+
+  /* Console bridge injected into preview iframe */
+  const CONSOLE_BRIDGE = `
+<script>
+(function(){
+  function safeStr(a){
+    try {
+      if (a instanceof Error) return a.message;
+      return typeof a === 'object' ? JSON.stringify(a) : String(a);
+    } catch(e){ return String(a); }
+  }
+  function send(type, args){
+    try {
+      window.parent.postMessage({ source: 'html-tester-console', type: type, args: args.map(safeStr) }, '*');
+    } catch(e){}
+  }
+  ['log','warn','error','info'].forEach(function(method){
+    const orig = console[method] ? console[method].bind(console) : function(){};
+    console[method] = function(){
+      send(method, Array.prototype.slice.call(arguments));
+      orig.apply(console, arguments);
+    };
+  });
+  window.addEventListener('error', function(e){
+    send('error', [(e.message || 'Erro desconhecido') + ' (linha ' + e.lineno + ')']);
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    const reason = e.reason && e.reason.message ? e.reason.message : e.reason;
+    send('error', ['Promise rejeitada: ' + safeStr(reason)]);
+  });
+})();
+<\/script>`;
+
+  /* DOM Elements */
+  const editor = document.getElementById('editor');
+  const highlighting = document.getElementById('highlighting');
+  const lineNumbers = document.getElementById('lineNumbers');
+  const frame = document.getElementById('previewFrame');
+  const consoleList = document.getElementById('consoleList');
+  const fileInput = document.getElementById('fileInput');
+
+  const statSize = document.getElementById('statSize');
+  const statLines = document.getElementById('statLines');
+  const statErrors = document.getElementById('statErrors');
+  const errChip = document.getElementById('errChip');
+  const heroFileName = document.getElementById('heroFileName');
+  const heroBadge = document.getElementById('heroBadge');
+
+  /* App State */
+  let currentFileName = 'sem-titulo.html';
+  let originalFileCode = '';
+  let errorCount = 0;
+  let unreadErrors = 0;
+  let debounceTimer = null;
+
+  /* Native HTML Syntax Highlighting Engine */
+  function escapeHTML(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function applySyntaxHighlighting(code) {
+    if (code[code.length - 1] === "\n") {
+      code += " ";
+    }
+
+    let html = escapeHTML(code);
+    html = html.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="hl-cmt">$1</span>');
+    html = html.replace(/(&lt;\/?[a-zA-Z0-9\-]+)/g, '<span class="hl-tag">$1</span>');
+    html = html.replace(/(&gt;)/g, '<span class="hl-tag">$1</span>');
+    html = html.replace(/\s([a-zA-Z0-9\-]+)=/g, ' <span class="hl-attr">$1</span>=');
+    html = html.replace(/="([^"]*)"/g, '="<span class="hl-val">$1</span>"');
+    html = html.replace(/='([^']*)'/g, "='<span class=\"hl-val\">$1</span>'");
+
+    highlighting.innerHTML = html;
+  }
+
+  /* Sync Scroll & Line Numbers */
+  function updateLineNumbersAndScroll() {
+    const text = editor.value;
+    const lines = text.split('\n').length;
+    let numbersHtml = '';
+    for (let i = 1; i <= lines; i++) {
+      numbersHtml += `<div>${i}</div>`;
+    }
+    lineNumbers.innerHTML = numbersHtml;
+
+    highlighting.scrollTop = editor.scrollTop;
+    highlighting.scrollLeft = editor.scrollLeft;
+    lineNumbers.scrollTop = editor.scrollTop;
+  }
+
+  function updateStats() {
+    const code = editor.value;
+    const lines = code.length ? code.split('\n').length : 0;
+    const bytes = new Blob([code]).size;
+    statLines.textContent = lines;
+    statSize.textContent = bytes < 1024 ? bytes + ' B' : (bytes / 1024).toFixed(1) + ' KB';
+  }
+
+  function renderPreview() {
+    const code = editor.value;
+    frame.srcdoc = code + CONSOLE_BRIDGE;
+    updateStats();
+    localStorage.setItem('dase_saved_code', code);
+  }
+
+  function scheduleRender() {
+    applySyntaxHighlighting(editor.value);
+    updateLineNumbersAndScroll();
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(renderPreview, 350);
+  }
+
+  editor.addEventListener('input', scheduleRender);
+  editor.addEventListener('scroll', updateLineNumbersAndScroll);
+
+  /* Tab Support inside Editor */
+  editor.addEventListener('keydown', function(e) {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      editor.value = editor.value.substring(0, start) + '  ' + editor.value.substring(end);
+      editor.selectionStart = editor.selectionEnd = start + 2;
+      scheduleRender();
+    }
+  });
+
+  document.getElementById('loadBtn').addEventListener('click', function() {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', function() {
+    const file = fileInput.files[0];
+    if (!file) return;
+    currentFileName = file.name;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      originalFileCode = e.target.result;
+      editor.value = originalFileCode;
+      heroFileName.textContent = currentFileName;
+      heroFileName.title = currentFileName;
+      heroBadge.textContent = 'Carregado';
+      clearConsole();
+      scheduleRender();
+    };
+    reader.readAsText(file);
+    fileInput.value = '';
+  });
+
+  /* Clear All State */
+  document.getElementById('clearBtn').addEventListener('click', function() {
+    editor.value = '';
+    frame.srcdoc = '';
+    currentFileName = 'sem-titulo.html';
+    originalFileCode = '';
+    heroFileName.textContent = 'Nenhum ficheiro carregado';
+    heroFileName.title = 'Nenhum ficheiro carregado';
+    heroBadge.textContent = 'Pronto';
+    clearConsole();
+    searchInput.value = '';
+    searchMatches = [];
+    searchIndex = -1;
+    updateSearchCount();
+    scheduleRender();
+  });
+
+  const downloadModal = document.getElementById('downloadModal');
+  const fileNameInput = document.getElementById('fileNameInput');
+  const confirmDownloadBtn = document.getElementById('confirmDownloadBtn');
+  const cancelDownloadBtn = document.getElementById('cancelDownloadBtn');
+
+  function openDownloadModal() {
+    fileNameInput.value = currentFileName || 'index.html';
+    downloadModal.classList.add('active');
+    setTimeout(() => {
+      fileNameInput.focus();
+      fileNameInput.select();
+    }, 50);
+  }
+
+  function closeDownloadModal() {
+    downloadModal.classList.remove('active');
+  }
+
+  function triggerFileDownload(name) {
+    let finalName = name.trim();
+    if (!finalName) finalName = 'index.html';
+    if (!finalName.endsWith('.html') && !finalName.endsWith('.htm')) {
+      finalName += '.html';
+    }
+
+    currentFileName = finalName;
+    heroFileName.textContent = currentFileName;
+    heroFileName.title = currentFileName;
+
+    const blob = new Blob([editor.value], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = finalName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  document.getElementById('editorDownloadBtn').addEventListener('click', openDownloadModal);
+  cancelDownloadBtn.addEventListener('click', closeDownloadModal);
+
+  confirmDownloadBtn.addEventListener('click', function() {
+    triggerFileDownload(fileNameInput.value);
+    closeDownloadModal();
+  });
+
+  fileNameInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      triggerFileDownload(fileNameInput.value);
+      closeDownloadModal();
+    } else if (e.key === 'Escape') {
+      closeDownloadModal();
+    }
+  });
+
+  downloadModal.addEventListener('click', function(e) {
+    if (e.target === downloadModal) closeDownloadModal();
+  });
+
+  /* ===== Pesquisa: agora com scroll real, porque o editor tem altura fixa ===== */
+  const searchInput = document.getElementById('searchInput');
+  const searchCount = document.getElementById('searchCount');
+  const searchPrev = document.getElementById('searchPrev');
+  const searchNext = document.getElementById('searchNext');
+  let searchMatches = [];
+  let searchIndex = -1;
+
+  function computeMatches() {
+    const query = searchInput.value;
+    searchMatches = [];
+    searchIndex = -1;
+    if (query) {
+      const text = editor.value;
+      const lowerText = text.toLowerCase();
+      const lowerQuery = query.toLowerCase();
+      let idx = 0;
+      while (true) {
+        const found = lowerText.indexOf(lowerQuery, idx);
+        if (found === -1) break;
+        searchMatches.push({ start: found, end: found + query.length });
+        idx = found + query.length;
+      }
+      if (searchMatches.length) searchIndex = 0;
+    }
+    updateSearchCount();
+  }
+
+  /* Centra o resultado na área visível do editor (agora com altura real, não infinita) */
+  function selectMatch(i) {
+    const m = searchMatches[i];
+    if (!m) return;
+    editor.focus();
+    editor.setSelectionRange(m.start, m.end);
+
+    const textBefore = editor.value.substring(0, m.start);
+    const lineNumber = textBefore.split('\n').length; // 1-based
+    const lineHeight = 13 * 1.55; // font-size * line-height do editor
+    const viewportHeight = editor.clientHeight || 350;
+
+    let target = (lineNumber - 1) * lineHeight - (viewportHeight / 2) + lineHeight;
+    const maxScroll = editor.scrollHeight - editor.clientHeight;
+    target = Math.max(0, Math.min(target, Math.max(0, maxScroll)));
+
+    editor.scrollTop = target;
+    updateLineNumbersAndScroll();
+  }
+
+  function updateSearchCount() {
+    const has = searchMatches.length > 0;
+    searchCount.textContent = has ? (searchIndex + 1) + '/' + searchMatches.length : (searchInput.value ? '0/0' : '');
+    searchPrev.disabled = !has;
+    searchNext.disabled = !has;
+  }
+
+  searchInput.addEventListener('input', function() {
+    computeMatches();
+    if (searchIndex !== -1) selectMatch(searchIndex);
+  });
+
+  searchNext.addEventListener('click', function() {
+    if (!searchMatches.length) computeMatches();
+    if (!searchMatches.length) return;
+    searchIndex = (searchIndex + 1) % searchMatches.length;
+    selectMatch(searchIndex);
+    updateSearchCount();
+  });
+
+  searchPrev.addEventListener('click', function() {
+    if (!searchMatches.length) computeMatches();
+    if (!searchMatches.length) return;
+    searchIndex = (searchIndex - 1 + searchMatches.length) % searchMatches.length;
+    selectMatch(searchIndex);
+    updateSearchCount();
+  });
+
+  searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (!searchMatches.length) computeMatches();
+      if (e.shiftKey) searchPrev.click(); else searchNext.click();
+    }
+  });
+
+  /* Sidebar Navigation / Mobile Drawer */
+  const hamburgerBtn = document.getElementById('hamburgerBtn');
+  const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+  const sidebar = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+  function toggleMobileMenu(open) {
+    const isOpen = typeof open === 'boolean' ? open : !sidebar.classList.contains('open');
+    sidebar.classList.toggle('open', isOpen);
+    sidebarOverlay.classList.toggle('active', isOpen);
+  }
+
+  hamburgerBtn.addEventListener('click', function() { toggleMobileMenu(); });
+  if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', function() { toggleMobileMenu(false); });
+  sidebarOverlay.addEventListener('click', function() { toggleMobileMenu(false); });
+
+  /* ===== Gestão de Painéis: abas no mobile, editor+preview lado a lado + gaveta de consola no desktop ===== */
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  const navButtons = { editor: document.getElementById('navEditor'), preview: document.getElementById('navPreview'), console: document.getElementById('navConsole') };
+  const consoleDrawer = document.getElementById('consoleDrawer');
+  const consoleToggleBtn = document.getElementById('consoleToggleBtn');
+  const closeConsoleBtn = document.getElementById('closeConsoleBtn');
+  const consoleBadge = document.getElementById('consoleBadge');
+  const consoleBadgeMobile = document.getElementById('consoleBadgeMobile');
+
+  function isMobileView() {
+    return window.matchMedia('(max-width: 900px)').matches;
+  }
+
+  function updateConsoleBadges() {
+    const show = unreadErrors > 0;
+    [consoleBadge, consoleBadgeMobile].forEach(function(b) {
+      b.textContent = unreadErrors;
+      b.style.display = show ? 'inline-flex' : 'none';
+    });
+  }
+
+  function activatePanel(name) {
+    document.querySelectorAll('.panel').forEach(function(p) {
+      p.classList.toggle('active', p.dataset.panel === name);
+    });
+    tabButtons.forEach(function(b) {
+      b.classList.toggle('active', b.dataset.panel === name);
+    });
+    Object.keys(navButtons).forEach(function(key) {
+      navButtons[key].classList.toggle('active', key === name);
+    });
+
+    if (name === 'console') {
+      consoleDrawer.classList.add('active', 'open');
+      unreadErrors = 0;
+      updateConsoleBadges();
+    } else {
+      consoleDrawer.classList.remove('active');
+      if (isMobileView()) consoleDrawer.classList.remove('open');
+    }
+
+    if (name === 'editor') editor.focus();
+    toggleMobileMenu(false);
+  }
+
+  tabButtons.forEach(function(btn) {
+    btn.addEventListener('click', function() { activatePanel(btn.dataset.panel); });
+  });
+  navButtons.editor.addEventListener('click', function() { activatePanel('editor'); });
+  navButtons.preview.addEventListener('click', function() { activatePanel('preview'); });
+  navButtons.console.addEventListener('click', function() { activatePanel('console'); });
+
+  consoleToggleBtn.addEventListener('click', function() {
+    const isOpen = consoleDrawer.classList.toggle('open');
+    if (isOpen) { unreadErrors = 0; updateConsoleBadges(); }
+  });
+  closeConsoleBtn.addEventListener('click', function() {
+    consoleDrawer.classList.remove('open', 'active');
+    if (isMobileView()) activatePanel('editor');
+  });
+
+  /* Device switcher logic */
+  const deviceFrame = document.getElementById('deviceFrame');
+  document.querySelectorAll('#deviceSwitch button').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('#deviceSwitch button').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      deviceFrame.className = 'device-frame ' + btn.dataset.device;
+    });
+  });
+
+  /* Fullscreen preview */
+  const previewPanel = document.getElementById('previewPanel');
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+  function toggleFullscreen(forceState) {
+    const active = typeof forceState === 'boolean' ? forceState : !previewPanel.classList.contains('fullscreen-active');
+    previewPanel.classList.toggle('fullscreen-active', active);
+    fullscreenBtn.innerHTML = active ? '✕ Sair' : '⛶ Ecrã inteiro';
+  }
+
+  fullscreenBtn.addEventListener('click', function() { toggleFullscreen(); });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && previewPanel.classList.contains('fullscreen-active')) toggleFullscreen(false);
+  });
+
+  /* Reset Apenas no LocalStorage da Pré-visualização (iframe) */
+  function resetPreviewStorage() {
+    try {
+      if (frame.contentWindow) {
+        frame.contentWindow.localStorage.clear();
+        frame.contentWindow.sessionStorage.clear();
+        renderPreview();
+        alert('LocalStorage do código de teste foi limpo!');
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  /* Reset Modal Logic (Aplicação Global) */
+  function openResetModal() {
+    toggleMobileMenu(false);
+    document.getElementById('resetModal').classList.add('active');
+    document.getElementById('confirmInput').value = '';
+    document.getElementById('confirmInput').focus();
+  }
+
+  function closeResetModal() {
+    document.getElementById('resetModal').classList.remove('active');
+  }
+
+  function confirmReset() {
+    const input = document.getElementById('confirmInput').value.trim();
+    if (input === 'dase') {
+      try {
+        if (frame.contentWindow) {
+          frame.contentWindow.localStorage.clear();
+          frame.contentWindow.sessionStorage.clear();
+        }
+      } catch(e) {}
+      localStorage.clear();
+      closeResetModal();
+      clearConsole();
+      editor.value = '';
+      scheduleRender();
+      updateStorageVisualizer();
+    } else {
+      alert('Incorreto. Escreve "dase" para confirmar.');
+    }
+  }
+
+  /* Storage Visualizer */
+  function updateStorageVisualizer() {
+    let totalBytes = 0;
+    for (let key in localStorage) {
+      if (localStorage.hasOwnProperty(key)) {
+        totalBytes += ((localStorage[key].length + key.length) * 2);
+      }
+    }
+
+    const maxBytes = 5 * 1024 * 1024;
+    const kb = (totalBytes / 1024).toFixed(1);
+    const percentage = Math.min((totalBytes / maxBytes) * 100, 100).toFixed(1);
+
+    document.getElementById('storageText').innerText = `${kb} KB (${percentage}%)`;
+    document.getElementById('storageBar').style.width = `${Math.max(percentage, 2)}%`;
+  }
+
+  /* Console Logic */
+  function clearConsole() {
+    consoleList.innerHTML = '<div class="empty-state">Sem mensagens ainda.</div>';
+    errorCount = 0;
+    unreadErrors = 0;
+    statErrors.textContent = '0';
+    errChip.classList.remove('error');
+    errChip.classList.add('ok');
+    updateConsoleBadges();
+  }
+
+  function addConsoleEntry(type, message) {
+    const empty = consoleList.querySelector('.empty-state');
+    if (empty) empty.remove();
+
+    const icons = { log: '📝', info: 'ℹ', warn: '⚠', error: '✕' };
+    const pillClass = type === 'error' ? 'error' : (type === 'warn' ? 'warn' : '');
+    const time = new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    const row = document.createElement('div');
+    row.className = 'list-row';
+    row.innerHTML =
+      '<div class="left">' +
+        '<div class="ico-box">' + icons[type] + '</div>' +
+        '<div><div class="msg"></div><div class="sub">' + time + '</div></div>' +
+      '</div>' +
+      '<span class="pill ' + pillClass + '">' + type + '</span>';
+    row.querySelector('.msg').textContent = message;
+
+    consoleList.insertBefore(row, consoleList.firstChild);
+
+    if (type === 'error') {
+      errorCount++;
+      statErrors.textContent = errorCount;
+      errChip.classList.toggle('error', errorCount > 0);
+      errChip.classList.toggle('ok', errorCount === 0);
+
+      if (!consoleDrawer.classList.contains('open') && !consoleDrawer.classList.contains('active')) {
+        unreadErrors++;
+        updateConsoleBadges();
+      }
+    }
+  }
+
+  window.addEventListener('message', function(e) {
+    const data = e.data;
+    if (!data || data.source !== 'html-tester-console') return;
+    const message = (data.args || []).join(' ');
+    addConsoleEntry(data.type, message || '(mensagem vazia)');
+  });
+
+  // Inicialização e recuperação de dados guardados
+  const savedCode = localStorage.getItem('dase_saved_code');
+  if (savedCode) {
+    editor.value = savedCode;
+  }
+  scheduleRender();
+  updateStorageVisualizer();
+  updateConsoleBadges();
+</script>
+
+</body>
+</html>
