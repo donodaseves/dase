@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="pt-PT" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dase/ — Ferramentas de Imagem</title>
+<meta name="description" content="Mockups visuais, marca d'água, editor e compressor de imagens — tudo local no navegador.">
+<style>
+:root{--ui-bg:#F5F6FA;--ui-panel:#FFFFFF;--ui-card:#F5F6FA;--ui-sidebar:#FFFFFF;--ui-text:#14161C;--ui-muted:#767C8C;--ui-accent:#2F5EFF;--ui-accent2:#FF5A3C;--ui-line:#E7E8EF;--ui-bar:#E2E5F5;--ui-header-height:60px}
+[data-theme="dark"]{--ui-bg:#0E0F14;--ui-panel:#14161D;--ui-card:#181A22;--ui-sidebar:#12131A;--ui-text:#F4F5F9;--ui-muted:#8B8FA3;--ui-line:#262834;--ui-bar:#21232D}
+*{box-sizing:border-box}
+body{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;background:var(--ui-bg);color:var(--ui-text);display:flex;min-height:100vh;transition:background .25s,color .25s;overflow-x:hidden;margin:0}
+h1,h2,h3{margin:0}
+.mobile-header{display:none;position:fixed;top:0;left:0;right:0;height:var(--ui-header-height);background:var(--ui-sidebar);border-bottom:1px solid var(--ui-line);padding:0 16px;align-items:center;justify-content:space-between;z-index:90}
+.mobile-header .brand{font-size:20px}
+.menu-toggle{background:transparent;border:none;color:var(--ui-text);font-size:22px;cursor:pointer;padding:8px;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.menu-toggle:hover{background:var(--ui-card)}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(2px);z-index:98;opacity:0;transition:opacity .3s ease;pointer-events:none}
+.sidebar-overlay.active{opacity:1;pointer-events:auto}
+.sidebar{width:240px;background:var(--ui-sidebar);border-right:1px solid var(--ui-line);padding:28px 20px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;z-index:99;transition:transform .3s cubic-bezier(.4,0,.2,1);flex-shrink:0}
+.sidebar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px}
+.brand{font-size:21px;font-weight:800;letter-spacing:-.5px}
+.brand span{color:var(--ui-accent)}
+.close-sidebar-btn{display:none;background:transparent;border:none;font-size:20px;color:var(--ui-muted);cursor:pointer;padding:4px}
+.nav{display:flex;flex-direction:column;gap:6px;flex:1}
+.nav button{display:flex;align-items:center;gap:12px;text-align:left;border:none;background:transparent;width:100%;cursor:pointer;color:var(--ui-muted);font-family:inherit;font-size:14.5px;font-weight:600;padding:12px 14px;border-radius:10px;transition:background .2s,color .2s}
+.nav button .ico{font-size:16px;width:20px;text-align:center}
+.nav button.active{background:var(--ui-accent);color:#fff}
+.nav button:not(.active):hover{background:var(--ui-card)}
+.sidebar-footer{display:flex;flex-direction:column;gap:14px;padding-top:16px;border-top:1px solid var(--ui-line)}
+.storage-indicator{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--ui-muted);font-weight:600}
+.storage-header{display:flex;justify-content:space-between}
+.storage-bar-track{height:6px;border-radius:4px;background:var(--ui-bar);overflow:hidden}
+.storage-bar-fill{height:100%;width:2%;background:var(--ui-accent);border-radius:4px;transition:width .3s ease}
+.reset-btn{width:100%;padding:10px 12px;border:1px solid var(--ui-line);border-radius:10px;background:var(--ui-card);color:var(--ui-muted);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s ease}
+.reset-btn:hover{background:var(--ui-accent2);color:#fff;border-color:var(--ui-accent2)}
+.user-box{display:flex;align-items:center;gap:10px}
+.theme-pill-switch{display:flex;align-items:center;background:var(--ui-card);border:1px solid var(--ui-line);border-radius:20px;padding:3px;flex:1;justify-content:space-between}
+.theme-pill-btn{flex:1;border:none;background:transparent;color:var(--ui-muted);padding:8px 0;border-radius:16px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s ease;font-family:inherit}
+.theme-pill-btn.active{background:var(--ui-sidebar);color:var(--ui-text);box-shadow:0 2px 6px rgba(0,0,0,.08);font-weight:700}
+.icon-btn{width:38px;height:38px;border-radius:50%;background:var(--ui-card);border:1px solid var(--ui-line);display:flex;align-items:center;justify-content:center;cursor:pointer;text-decoration:none;color:var(--ui-text);font-size:14px;font-weight:700;transition:background .2s;flex-shrink:0}
+.icon-btn:hover{background:var(--ui-bar)}
+.main{flex:1;padding:32px 40px 60px;max-width:1100px;margin:0 auto;display:flex;flex-direction:column;width:100%}
+.top-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;gap:12px}
+.top-row h1{font-size:22px;font-weight:800;letter-spacing:-.3px}
+.top-row .sub{font-size:13px;color:var(--ui-muted);margin-top:4px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.card{background:var(--ui-card);border-radius:14px;padding:18px 20px;border:1px solid var(--ui-line)}
+.card .lbl{font-size:12px;color:var(--ui-muted);font-weight:600;margin-bottom:8px}
+.card .val{font-size:24px;font-weight:800}
+.card .val.accent2{color:var(--ui-accent2)}
+.cols{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-bottom:22px}
+.panel-box{background:var(--ui-card);border-radius:16px;border:1px solid var(--ui-line);padding:22px 24px;margin-bottom:22px}
+.cols .panel-box{margin-bottom:0}
+.panel-box h2{font-size:14.5px;font-weight:700;margin-bottom:18px}
+.panel-box h2 .muted{color:var(--ui-muted);font-weight:500;font-size:12.5px;margin-left:6px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.field>label{font-size:12px;font-weight:700;color:var(--ui-muted)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+input[type="text"].inp,input[type="number"].inp,select.inp{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--ui-line);background:var(--ui-panel);color:var(--ui-text);font-size:13.5px;font-family:inherit;outline:none}
+.inp:focus{border-color:var(--ui-accent)}
+input[type="range"].rng{width:100%;accent-color:var(--ui-accent)}
+.rng-val{font-size:12px;color:var(--ui-muted);font-weight:600}
+.file-drop{border:1px dashed var(--ui-line);border-radius:12px;padding:16px;background:var(--ui-panel);font-size:13px;color:var(--ui-muted);font-weight:600;cursor:pointer;display:block;text-align:center}
+.file-drop:hover{border-color:var(--ui-accent);color:var(--ui-accent)}
+.file-drop input{display:none}
+.btn{padding:10px 14px;border-radius:10px;border:1px solid var(--ui-line);background:var(--ui-panel);color:var(--ui-text);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s ease}
+.btn:hover{background:var(--ui-bar)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:var(--ui-accent);border-color:var(--ui-accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.danger{background:var(--ui-panel);color:var(--ui-accent2);border-color:var(--ui-line)}
+.btn.danger:hover{background:var(--ui-accent2);color:#fff;border-color:var(--ui-accent2)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{padding:7px 12px;border-radius:20px;border:1px solid var(--ui-line);background:var(--ui-panel);color:var(--ui-muted);font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
+.chip.active{background:var(--ui-accent);border-color:var(--ui-accent);color:#fff}
+.pill{background:rgba(47,94,255,.12);color:var(--ui-accent);font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:20px;flex-shrink:0}
+.preview-wrap{background:var(--ui-panel);border:1px solid var(--ui-line);border-radius:14px;overflow:hidden}
+.banner-box{width:100%;background:var(--ui-bar);position:relative;overflow:hidden}
+.banner-box img{width:100%;height:100%;object-fit:cover;display:block}
+.banner-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--ui-muted);font-weight:600}
+.avatar-row{display:flex;align-items:flex-end;gap:18px;padding:16px;flex-wrap:wrap}
+.avatar{position:relative;background:var(--ui-bar);overflow:hidden;flex-shrink:0;border:3px solid var(--ui-panel)}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.avatar.circle{border-radius:50%}
+.avatar.rounded{border-radius:18%}
+.badge-live{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);background:var(--ui-accent2);color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:10px;letter-spacing:.3px;white-space:nowrap}
+.badge-dot{position:absolute;right:2px;bottom:2px;width:26%;height:26%;border-radius:50%;border:2px solid var(--ui-panel)}
+.badge-check{position:absolute;right:-2px;top:-2px;width:30%;height:30%;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;border:2px solid var(--ui-panel)}
+.avatar-meta{font-size:12px;color:var(--ui-muted);font-weight:600}
+.preview-img{width:100%;display:block;background:var(--ui-bar)}
+.empty-pad{padding:40px;text-align:center;font-size:13px;color:var(--ui-muted);font-weight:600}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--ui-line);font-size:13.5px}
+.stat-row:last-child{border-bottom:none}
+.stat-row .k{color:var(--ui-muted);font-weight:600}
+.stat-row .v{font-weight:700}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;pointer-events:none;transition:opacity .2s ease;padding:16px}
+.modal-overlay.active{opacity:1;pointer-events:auto}
+.modal{background:var(--ui-panel);border:1px solid var(--ui-line);border-radius:16px;padding:24px;width:100%;max-width:360px;box-shadow:0 10px 25px rgba(0,0,0,.15)}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:8px}
+.modal p{font-size:13px;color:var(--ui-muted);margin-bottom:16px;line-height:1.4}
+.modal input{width:100%;padding:12px;border-radius:8px;border:1px solid var(--ui-line);background:var(--ui-card);color:var(--ui-text);font-size:14px;margin-bottom:16px;outline:none;font-family:inherit}
+.modal input:focus{border-color:var(--ui-accent)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end}
+.modal-btn{padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;font-family:inherit}
+.modal-btn.cancel{background:var(--ui-card);color:var(--ui-text);border:1px solid var(--ui-line)}
+.modal-btn.confirm{background:var(--ui-accent2);color:#fff}
+footer.app-footer{margin-top:auto;padding-top:40px;text-align:center;font-size:12.5px;color:var(--ui-muted)}
+.tab{display:none}
+.tab.active{display:block}
+@media (max-width:900px){
+.mobile-header{display:flex}.close-sidebar-btn{display:block}.sidebar-overlay{display:block}
+.sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);box-shadow:5px 0 25px rgba(0,0,0,.15)}
+.sidebar.open{transform:translateX(0)}
+.main{padding:20px 16px 40px;margin-top:var(--ui-header-height)}
+.grid{grid-template-columns:repeat(2,1fr);gap:12px}.cols{grid-template-columns:1fr;gap:16px}
+}
+@media (max-width:480px){.grid{grid-template-columns:1fr}.field-row{grid-template-columns:1fr}.panel-box{padding:16px}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<filter id="cb-protanopia"><feColorMatrix type="matrix" values="0.567 0.433 0 0 0  0.558 0.442 0 0 0  0 0.242 0.758 0 0  0 0 0 1 0"/></filter>
+<filter id="cb-deuteranopia"><feColorMatrix type="matrix" values="0.625 0.375 0 0 0  0.7 0.3 0 0 0  0 0.3 0.7 0 0  0 0 0 1 0"/></filter>
+<filter id="cb-tritanopia"><feColorMatrix type="matrix" values="0.95 0.05 0 0 0  0 0.433 0.567 0 0  0 0.475 0.525 0 0  0 0 0 1 0"/></filter>
+</svg>
+
+<header class="mobile-header">
+  <div class="brand">dase<span>/</span></div>
+  <button class="menu-toggle" id="menuToggle" aria-label="Abrir menu">☰</button>
+</header>
+
+<div class="sidebar-overlay" id="overlay"></div>
+
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="brand">dase<span>/</span></div>
+    <button class="close-sidebar-btn" id="closeSidebar" aria-label="Fechar">✕</button>
+  </div>
+  <div class="nav" id="nav">
+    <button data-tab="mockups" class="active"><span class="ico">🖼️</span> Mockups</button>
+    <button data-tab="watermark"><span class="ico">💧</span> Marca d'Água</button>
+    <button data-tab="editor"><span class="ico">✂️</span> Editor</button>
+    <button data-tab="compressor"><span class="ico">📦</span> Compressor</button>
+  </div>
+  <div class="sidebar-footer">
+    <div class="storage-indicator">
+      <div class="storage-header"><span>Armazenamento</span><span id="storageLabel">0.0 KB (0.0%)</span></div>
+      <div class="storage-bar-track"><div class="storage-bar-fill" id="storageFill"></div></div>
+    </div>
+    <button class="reset-btn" id="resetBtn">↺ Repor</button>
+    <div class="user-box">
+      <div class="theme-pill-switch">
+        <button class="theme-pill-btn active" data-theme-set="light" aria-label="Modo Claro">☀</button>
+        <button class="theme-pill-btn" data-theme-set="dark" aria-label="Modo Escuro">☾</button>
+      </div>
+      <a href="https://donodaseves.github.io/dase/" class="icon-btn" title="Ir para o site">D</a>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="top-row">
+    <div><h1 id="pageTitle">Mockups</h1><div class="sub" id="pageSub">Banners e avatares</div></div>
+    <div class="pill" id="pagePill">🖼️ Local</div>
+  </div>
+
+  <!-- ABA 1 -->
+  <section class="tab active" id="tab-mockups">
+    <div class="cols">
+      <div class="panel-box">
+        <h2>Pré-visualização <span class="muted" id="mkDims">2560 × 1440</span></h2>
+        <div class="preview-wrap" id="mkPreview">
+          <div class="banner-box" id="mkBanner" style="aspect-ratio:2560/1440">
+            <div class="banner-empty" id="mkBannerEmpty">Sem banner</div>
+            <img id="mkBannerImg" alt="Banner" style="display:none">
+          </div>
+          <div class="avatar-row">
+            <div class="avatar circle" id="mkAvatar" style="width:88px;height:88px">
+              <img id="mkAvatarImg" alt="Avatar" style="display:none">
+            </div>
+            <div class="avatar-meta" id="mkMeta"></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-box">
+        <h2>Opções</h2>
+        <div class="field"><label>Banner</label>
+          <label class="file-drop" id="mkBannerDrop">Carregar<input type="file" accept="image/*" id="mkBannerFile"></label></div>
+        <div class="field"><label>Avatar</label>
+          <label class="file-drop" id="mkAvatarDrop">Carregar<input type="file" accept="image/*" id="mkAvatarFile"></label></div>
+        <div class="field"><label>Plataforma</label><select class="inp" id="mkPlatform"></select></div>
+        <div class="field"><label>Acessibilidade</label><select class="inp" id="mkAccess"></select></div>
+        <div class="field"><label>Corte</label>
+          <div class="chips" id="mkShape">
+            <button class="chip active" data-v="circle">Circular</button>
+            <button class="chip" data-v="rounded">Arredondado</button>
+          </div></div>
+        <div class="field"><label>Crachá</label><select class="inp" id="mkBadge"></select></div>
+        <div class="field"><label>Tamanho</label>
+          <div class="chips" id="mkSize">
+            <button class="chip" data-v="sm">Pequeno</button>
+            <button class="chip active" data-v="md">Médio</button>
+            <button class="chip" data-v="lg">Grande</button>
+          </div></div>
+        <div class="btn-row"><button class="btn danger" id="mkClear">Limpar</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABA 2 -->
+  <section class="tab" id="tab-watermark">
+    <div class="cols">
+      <div class="panel-box">
+        <h2>Resultado <span class="muted" id="wmMsg"></span></h2>
+        <div class="preview-wrap">
+          <img class="preview-img" id="wmOut" alt="Marca d'água" style="display:none">
+          <div class="empty-pad" id="wmEmpty">Sem imagem</div>
+        </div>
+        <div class="btn-row" style="margin-top:14px">
+          <button class="btn primary" id="wmDownload" disabled>Descarregar</button>
+          <button class="btn" id="wmCopy" disabled>Copiar</button>
+        </div>
+      </div>
+      <div class="panel-box">
+        <h2>Opções</h2>
+        <div class="field"><label>Imagem</label>
+          <label class="file-drop" id="wmDrop">Carregar<input type="file" accept="image/*" id="wmFile"></label></div>
+        <div class="field"><label>Logótipo (PNG)</label>
+          <label class="file-drop" id="wmLogoDrop">Carregar<input type="file" accept="image/png" id="wmLogoFile"></label></div>
+        <div class="field"><label>Texto</label><input class="inp" type="text" id="wmText" value="dase/" placeholder="Escreva algo..."></div>
+        <div class="field"><label>Posição</label><select class="inp" id="wmPos"></select></div>
+        <div class="field"><label>Fonte</label><select class="inp" id="wmFont"></select></div>
+        <div class="field"><label>Tamanho</label><input class="rng" type="range" min="1" max="20" value="5" id="wmScale"><span class="rng-val" id="wmScaleVal">5%</span></div>
+        <div class="field"><label>Opacidade</label><input class="rng" type="range" min="5" max="100" value="60" id="wmOpacity"><span class="rng-val" id="wmOpacityVal">60%</span></div>
+        <div class="btn-row"><button class="btn danger" id="wmClear">Limpar</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABA 3 -->
+  <section class="tab" id="tab-editor">
+    <div class="cols">
+      <div class="panel-box">
+        <h2>Resultado <span class="muted" id="edMsg"></span></h2>
+        <div class="preview-wrap">
+          <img class="preview-img" id="edOut" alt="Editada" style="display:none">
+          <div class="empty-pad" id="edEmpty">Sem imagem</div>
+        </div>
+        <div class="btn-row" style="margin-top:14px">
+          <button class="btn primary" id="edDownload" disabled>Descarregar</button>
+          <button class="btn" id="edCopy" disabled>Copiar</button>
+        </div>
+      </div>
+      <div class="panel-box">
+        <h2>Opções</h2>
+        <div class="field"><label>Imagem</label>
+          <label class="file-drop" id="edDrop">Carregar<input type="file" accept="image/*" id="edFile"></label></div>
+        <div class="field-row">
+          <div class="field"><label>Largura</label><input class="inp" type="number" min="1" id="edW" value="1080"></div>
+          <div class="field"><label>Altura</label><input class="inp" type="number" min="1" id="edH" value="1080"></div>
+        </div>
+        <div class="field"><label>Corte</label>
+          <div class="chips" id="edCrop">
+            <button class="chip active" data-v="orig">Original</button>
+            <button class="chip" data-v="1-1">1:1</button>
+            <button class="chip" data-v="4-3">4:3</button>
+            <button class="chip" data-v="16-9">16:9</button>
+            <button class="chip" data-v="9-16">9:16</button>
+          </div></div>
+        <div class="field"><label>Formato</label><select class="inp" id="edFormat">
+          <option value="png">PNG</option><option value="jpeg">JPEG</option><option value="webp">WebP</option></select></div>
+        <div class="field"><label>Brilho</label><input class="rng" type="range" min="0" max="200" value="100" id="edBright"><span class="rng-val" id="edBrightVal">100%</span></div>
+        <div class="field"><label>Contraste</label><input class="rng" type="range" min="0" max="200" value="100" id="edContrast"><span class="rng-val" id="edContrastVal">100%</span></div>
+        <div class="field"><label>Saturação</label><input class="rng" type="range" min="0" max="200" value="100" id="edSat"><span class="rng-val" id="edSatVal">100%</span></div>
+        <div class="field"><label>Desfoque</label><input class="rng" type="range" min="0" max="20" value="0" id="edBlur"><span class="rng-val" id="edBlurVal">0px</span></div>
+        <div class="btn-row"><button class="btn danger" id="edClear">Limpar</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABA 4 -->
+  <section class="tab" id="tab-compressor">
+    <div class="grid">
+      <div class="card"><div class="lbl">ORIGINAL</div><div class="val" id="cpOrig">0 B</div></div>
+      <div class="card"><div class="lbl">COMPRIMIDA</div><div class="val accent2" id="cpOut">0 B</div></div>
+      <div class="card"><div class="lbl">POUPANÇA</div><div class="val" id="cpSaved">0.0%</div></div>
+      <div class="card"><div class="lbl">RESOLUÇÃO</div><div class="val" id="cpRes">0×0</div></div>
+    </div>
+    <div class="cols">
+      <div class="panel-box">
+        <h2>Resultado <span class="muted" id="cpMsg"></span></h2>
+        <div class="preview-wrap">
+          <img class="preview-img" id="cpImg" alt="Comprimida" style="display:none">
+          <div class="empty-pad" id="cpEmpty">Sem imagem</div>
+        </div>
+        <div class="btn-row" style="margin-top:14px">
+          <button class="btn primary" id="cpDownload" disabled>Descarregar</button>
+          <button class="btn" id="cpCopy" disabled>Copiar</button>
+        </div>
+      </div>
+      <div class="panel-box">
+        <h2>Opções</h2>
+        <div class="field"><label>Imagem</label>
+          <label class="file-drop" id="cpDrop">Carregar<input type="file" accept="image/*" id="cpFile"></label></div>
+        <div class="field"><label>Qualidade</label><input class="rng" type="range" min="5" max="100" value="70" id="cpQuality"><span class="rng-val" id="cpQualityVal">70%</span></div>
+        <div class="field"><label>Escala</label><input class="rng" type="range" min="10" max="100" value="100" id="cpScale"><span class="rng-val" id="cpScaleVal">100%</span></div>
+        <div class="field"><label>Formato</label><select class="inp" id="cpFormat">
+          <option value="webp">WebP</option><option value="jpeg">JPEG</option><option value="png">PNG</option></select></div>
+        <div class="stat-row"><span class="k">Poupança</span><span class="v" id="cpSaved2">0.0%</span></div>
+        <div class="btn-row" style="margin-top:14px"><button class="btn danger" id="cpClear">Limpar</button></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="app-footer">Projeto pessoal, desenvolvido com apoio de IA. Sem suporte ou correções de erros fornecidos.</footer>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>Repor LocalStorage</h3>
+    <p>Escreve <strong>"dase"</strong> para confirmar.</p>
+    <input type="text" id="modalInput" placeholder="dase" autocomplete="off">
+    <div class="modal-actions">
+      <button class="modal-btn cancel" id="modalCancel">Cancelar</button>
+      <button class="modal-btn confirm" id="modalConfirm">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+
+/* ---------- utilitários de imagem ---------- */
+function readFileAsDataURL(file){
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result));
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+function loadImage(src){
+  return new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = rej;
+    i.src = src;
+  });
+}
+function formatBytes(n){
+  if(!n) return "0 B";
+  if(n < 1024) return n + " B";
+  if(n < 1024*1024) return (n/1024).toFixed(1) + " KB";
+  return (n/1024/1024).toFixed(2) + " MB";
+}
+function mimeFor(f){ return f === "jpeg" ? "image/jpeg" : f === "webp" ? "image/webp" : "image/png"; }
+function canvasToBlob(c, mime, q){
+  return new Promise((res) => c.toBlob((b) => res(b), mime, q));
+}
+function downloadBlob(blob, name){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+async function copyBlob(blob){
+  try{
+    let b = blob;
+    if(b.type !== "image/png"){
+      const u = URL.createObjectURL(b);
+      const img = await loadImage(u);
+      const c = document.createElement("canvas");
+      c.width = img.naturalWidth; c.height = img.naturalHeight;
+      c.getContext("2d").drawImage(img, 0, 0);
+      b = await canvasToBlob(c, "image/png");
+      URL.revokeObjectURL(u);
+    }
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": b })]);
+    return true;
+  }catch(e){ return false; }
+}
+function chips(container, onPick){
+  container.addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-v]");
+    if(!b) return;
+    [...container.querySelectorAll("button")].forEach((x) => x.classList.toggle("active", x === b));
+    onPick(b.dataset.v);
+  });
+}
+function setActiveChip(container, v){
+  [...container.querySelectorAll("button[data-v]")].forEach((x) => x.classList.toggle("active", x.dataset.v === v));
+}
+function fill(sel, list){
+  sel.innerHTML = list.map((x) => '<option value="' + x.id + '">' + x.label + "</option>").join("");
+}
+
+/* ---------- shell ---------- */
+const tabsMeta = {
+  mockups: { label: "Mockups", sub: "Banners e avatares", ico: "🖼️" },
+  watermark: { label: "Marca d'Água", sub: "Texto e logótipo", ico: "💧" },
+  editor: { label: "Editor", sub: "Redimensionar e ajustar", ico: "✂️" },
+  compressor: { label: "Compressor", sub: "Reduzir tamanho", ico: "📦" }
+};
+function openSidebar(v){
+  $("sidebar").classList.toggle("open", v);
+  $("overlay").classList.toggle("active", v);
+}
+$("menuToggle").onclick = () => openSidebar(true);
+$("closeSidebar").onclick = () => openSidebar(false);
+$("overlay").onclick = () => openSidebar(false);
+
+$("nav").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-tab]");
+  if(!b) return;
+  const id = b.dataset.tab;
+  [...$("nav").querySelectorAll("button")].forEach((x) => x.classList.toggle("active", x === b));
+  document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.id === "tab-" + id));
+  const m = tabsMeta[id];
+  $("pageTitle").textContent = m.label;
+  $("pageSub").textContent = m.sub;
+  $("pagePill").textContent = m.ico + " Local";
+  openSidebar(false);
+});
+
+function setTheme(t){
+  document.documentElement.setAttribute("data-theme", t);
+  try{ localStorage.setItem("dase-theme", t); }catch(e){}
+  document.querySelectorAll("[data-theme-set]").forEach((b) => b.classList.toggle("active", b.dataset.themeSet === t));
+  refreshStorage();
+}
+document.querySelectorAll("[data-theme-set]").forEach((b) => { b.onclick = () => setTheme(b.dataset.themeSet); });
+
+function refreshStorage(){
+  let total = 0;
+  try{
+    for(const k in localStorage){
+      if(Object.prototype.hasOwnProperty.call(localStorage, k)) total += (String(localStorage[k]).length + k.length) * 2;
+    }
+  }catch(e){}
+  const pct = Math.min((total / (5*1024*1024)) * 100, 100);
+  $("storageLabel").textContent = (total/1024).toFixed(1) + " KB (" + pct.toFixed(1) + "%)";
+  $("storageFill").style.width = Math.max(pct, 2) + "%";
+}
+$("resetBtn").onclick = () => { $("modalInput").value = ""; $("modal").classList.add("active"); openSidebar(false); };
+$("modalCancel").onclick = () => $("modal").classList.remove("active");
+$("modalConfirm").onclick = () => {
+  if($("modalInput").value.trim() === "dase"){ try{ localStorage.clear(); }catch(e){} location.reload(); }
+};
+
+/* ---------- ABA 1: mockups ---------- */
+const platforms = [
+  { id:"youtube", label:"YouTube", w:2560, h:1440, avatar:800 },
+  { id:"twitch", label:"Twitch", w:1200, h:480, avatar:600 },
+  { id:"x", label:"Twitter/X", w:1500, h:500, avatar:400 },
+  { id:"meta", label:"Facebook/Instagram", w:1640, h:664, avatar:320 },
+  { id:"linkedin", label:"LinkedIn", w:1584, h:396, avatar:400 },
+  { id:"reddit", label:"reddit", w:1920, h:384, avatar:256 },
+  { id:"discord", label:"Discord", w:960, h:540, avatar:512 }
+];
+const accessOpts = [
+  { id:"none", label:"Normal" },{ id:"protanopia", label:"Protanopia" },
+  { id:"deuteranopia", label:"Deuteranopia" },{ id:"tritanopia", label:"Tritanopia" },
+  { id:"achromatopsia", label:"Acromatopsia" },{ id:"blur", label:"Desfoque" },
+  { id:"lowcontrast", label:"Baixo contraste" }
+];
+const badgeOpts = [
+  { id:"none", label:"Nenhum" },{ id:"live", label:"Em Direto" },{ id:"online", label:"Online" },
+  { id:"idle", label:"Ausente" },{ id:"dnd", label:"Não perturbar" },{ id:"offline", label:"Offline" },
+  { id:"verified-blue", label:"Verificado azul" },{ id:"verified-gold", label:"Verificado dourado" },
+  { id:"verified-grey", label:"Verificado cinza" }
+];
+const sizeMap = { sm:{label:"Pequeno",px:48}, md:{label:"Médio",px:88}, lg:{label:"Grande",px:144} };
+const dotColor = { online:"#23A55A", idle:"#F0B232", dnd:"#F23F43", offline:"#80848E" };
+const checkColor = { "verified-blue":"#2F5EFF", "verified-gold":"#E1A100", "verified-grey":"#80848E" };
+function filterCss(id){
+  if(id === "protanopia" || id === "deuteranopia" || id === "tritanopia") return "url(#cb-" + id + ")";
+  if(id === "achromatopsia") return "grayscale(1)";
+  if(id === "blur") return "blur(3px)";
+  if(id === "lowcontrast") return "contrast(0.45) brightness(1.1)";
+  return "none";
+}
+fill($("mkPlatform"), platforms);
+fill($("mkAccess"), accessOpts);
+fill($("mkBadge"), badgeOpts);
+
+const mk = { banner:null, avatar:null, platform:"youtube", access:"none", shape:"circle", badge:"none", size:"md" };
+function renderMockups(){
+  const p = platforms.find((x) => x.id === mk.platform);
+  const s = sizeMap[mk.size];
+  $("mkDims").textContent = p.w + " × " + p.h;
+  $("mkBanner").style.aspectRatio = p.w + "/" + p.h;
+  $("mkPreview").style.filter = filterCss(mk.access);
+  $("mkBannerImg").style.display = mk.banner ? "block" : "none";
+  if(mk.banner) $("mkBannerImg").src = mk.banner;
+  $("mkBannerEmpty").style.display = mk.banner ? "none" : "flex";
+  const av = $("mkAvatar");
+  av.className = "avatar " + mk.shape;
+  av.style.width = s.px + "px";
+  av.style.height = s.px + "px";
+  [...av.querySelectorAll("span")].forEach((x) => x.remove());
+  $("mkAvatarImg").style.display = mk.avatar ? "block" : "none";
+  if(mk.avatar) $("mkAvatarImg").src = mk.avatar;
+  if(mk.badge === "live"){
+    const e = document.createElement("span"); e.className = "badge-live"; e.textContent = "EM DIRETO"; av.appendChild(e);
+  }
+  if(dotColor[mk.badge]){
+    const e = document.createElement("span"); e.className = "badge-dot"; e.style.background = dotColor[mk.badge]; av.appendChild(e);
+  }
+  if(checkColor[mk.badge]){
+    const e = document.createElement("span"); e.className = "badge-check"; e.style.background = checkColor[mk.badge]; e.textContent = "✓"; av.appendChild(e);
+  }
+  $("mkMeta").textContent = s.label + " · " + s.px + "px · avatar " + p.avatar + "×" + p.avatar;
+}
+$("mkBannerFile").onchange = async (e) => {
+  const f = e.target.files[0]; if(!f) return;
+  mk.banner = await readFileAsDataURL(f);
+  $("mkBannerDrop").firstChild.textContent = "Substituir";
+  renderMockups();
+};
+$("mkAvatarFile").onchange = async (e) => {
+  const f = e.target.files[0]; if(!f) return;
+  mk.avatar = await readFileAsDataURL(f);
+  $("mkAvatarDrop").firstChild.textContent = "Substituir";
+  renderMockups();
+};
+$("mkPlatform").onchange = (e) => { mk.platform = e.target.value; renderMockups(); };
+$("mkAccess").onchange = (e) => { mk.access = e.target.value; renderMockups(); };
+$("mkBadge").onchange = (e) => { mk.badge = e.target.value; renderMockups(); };
+chips($("mkShape"), (v) => { mk.shape = v; renderMockups(); });
+chips($("mkSize"), (v) => { mk.size = v; renderMockups(); });
+$("mkClear").onclick = () => {
+  mk.banner = null; mk.avatar = null; mk.platform = "youtube"; mk.access = "none";
+  mk.shape = "circle"; mk.badge = "none"; mk.size = "md";
+  $("mkPlatform").value = "youtube"; $("mkAccess").value = "none"; $("mkBadge").value = "none";
+  $("mkBannerFile").value = ""; $("mkAvatarFile").value = "";
+  $("mkBannerDrop").firstChild.textContent = "Carregar";
+  $("mkAvatarDrop").firstChild.textContent = "Carregar";
+  setActiveChip($("mkShape"), "circle"); setActiveChip($("mkSize"), "md");
+  renderMockups();
+};
+renderMockups();
+
+/* ---------- ABA 2: marca d'água ---------- */
+const wmPositions = [
+  { id:"tl", label:"Canto sup. esq." },{ id:"tr", label:"Canto sup. dir." },
+  { id:"bl", label:"Canto inf. esq." },{ id:"br", label:"Canto inf. dir." },
+  { id:"center", label:"Centro" },{ id:"grid", label:"Grelha diagonal" },{ id:"bar", label:"Barra no rodapé" }
+];
+const wmFonts = [
+  { id:'"Segoe UI", sans-serif', label:"Segoe UI" },{ id:"Georgia, serif", label:"Georgia" },
+  { id:'"Courier New", monospace', label:"Courier" },{ id:"Impact, sans-serif", label:"Impact" }
+];
+fill($("wmPos"), wmPositions); $("wmPos").value = "br";
+fill($("wmFont"), wmFonts);
+
+const wm = { src:null, logo:null, text:"dase/", pos:"br", font:wmFonts[0].id, scale:5, opacity:60 };
+const wmCanvas = document.createElement("canvas");
+let wmToken = 0;
+
+async function renderWatermark(){
+  const token = ++wmToken;
+  if(!wm.src){
+    $("wmOut").style.display = "none"; $("wmEmpty").style.display = "block";
+    $("wmDownload").disabled = true; $("wmCopy").disabled = true;
+    return;
+  }
+  const img = await loadImage(wm.src);
+  const logoImg = wm.logo ? await loadImage(wm.logo) : null;
+  if(token !== wmToken) return;
+  const c = wmCanvas;
+  c.width = img.naturalWidth; c.height = img.naturalHeight;
+  const ctx = c.getContext("2d");
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.drawImage(img, 0, 0);
+
+  const unit = Math.min(c.width, c.height);
+  const fontSize = (unit * wm.scale) / 100;
+  const pad = unit * 0.03;
+  ctx.globalAlpha = wm.opacity / 100;
+  ctx.font = "700 " + fontSize + "px " + wm.font;
+  ctx.fillStyle = "#ffffff";
+  ctx.shadowColor = "rgba(0,0,0,.35)";
+  ctx.shadowBlur = fontSize * 0.12;
+
+  const logoW = logoImg ? fontSize * 1.6 : 0;
+  const logoH = logoImg ? (logoImg.naturalHeight / logoImg.naturalWidth) * logoW : 0;
+  const textW = wm.text ? ctx.measureText(wm.text).width : 0;
+  const blockW = textW + (logoImg ? logoW + fontSize * 0.4 : 0);
+
+  function drawBlock(x, y){
+    let cx = x;
+    if(logoImg){ ctx.drawImage(logoImg, cx, y - logoH * 0.8, logoW, logoH); cx += logoW + fontSize * 0.4; }
+    if(wm.text) ctx.fillText(wm.text, cx, y);
+  }
+
+  if(wm.pos === "grid"){
+    ctx.save();
+    ctx.translate(c.width / 2, c.height / 2);
+    ctx.rotate(-Math.PI / 6);
+    const stepX = blockW + unit * 0.12;
+    const stepY = fontSize * 3;
+    for(let y = -c.height; y < c.height; y += stepY){
+      for(let x = -c.width; x < c.width; x += stepX) drawBlock(x, y);
+    }
+    ctx.restore();
+  }else if(wm.pos === "bar"){
+    const barH = fontSize * 2.2;
+    ctx.save();
+    ctx.globalAlpha = (wm.opacity / 100) * 0.55;
+    ctx.fillStyle = "#000000"; ctx.shadowBlur = 0;
+    ctx.fillRect(0, c.height - barH, c.width, barH);
+    ctx.restore();
+    ctx.textBaseline = "middle";
+    drawBlock(pad, c.height - barH / 2);
+  }else{
+    ctx.textBaseline = "alphabetic";
+    const left = wm.pos === "tl" || wm.pos === "bl";
+    const top = wm.pos === "tl" || wm.pos === "tr";
+    let x = left ? pad : c.width - blockW - pad;
+    let y = top ? pad + fontSize : c.height - pad;
+    if(wm.pos === "center"){ x = (c.width - blockW) / 2; y = c.height / 2 + fontSize / 3; }
+    drawBlock(x, y);
+  }
+  ctx.globalAlpha = 1;
+  $("wmOut").src = c.toDataURL("image/png");
+  $("wmOut").style.display = "block"; $("wmEmpty").style.display = "none";
+  $("wmDownload").disabled = false; $("wmCopy").disabled = false;
+}
+$("wmFile").onchange = async (e) => {
+  const f = e.target.files[0]; if(!f) return;
+  wm.src = await readFileAsDataURL(f);
+  $("wmDrop").firstChild.textContent = "Substituir";
+  renderWatermark();
+};
+$("wmLogoFile").onchange = async (e) => {
+  const f = e.target.files[0]; if(!f) return;
+  wm.logo = await readFileAsDataURL(f);
+  $("wmLogoDrop").firstChild.textContent = "Substituir";
+  renderWatermark();
+};
+$("wmText").oninput = (e) => { wm.text = e.target.value; renderWatermark(); };
+$("wmPos").onchange = (e) => { wm.pos = e.target.value; renderWatermark(); };
+$("wmFont").onchange = (e) => { wm.font = e.target.value; renderWatermark(); };
+$("wmScale").oninput = (e) => { wm.scale = +e.target.value; $("wmScaleVal").textContent = wm.scale + "%"; renderWatermark(); };
+$("wmOpacity").oninput = (e) => { wm.opacity = +e.target.value; $("wmOpacityVal").textContent = wm.opacity + "%"; renderWatermark(); };
+async function wmAct(mode){
+  if(!wm.src) return;
+  const blob = await canvasToBlob(wmCanvas, "image/png");
+  if(mode === "download"){ downloadBlob(blob, "marca-agua.png"); $("wmMsg").textContent = "Descarregado"; }
+  else { $("wmMsg").textContent = (await copyBlob(blob)) ? "Copiado" : "Falhou"; }
+}
+$("wmDownload").onclick = () => wmAct("download");
+$("wmCopy").onclick = () => wmAct("copy");
+$("wmClear").onclick = () => {
+  wm.src = null; wm.logo = null; wm.text = "dase/"; wm.pos = "br"; wm.font = wmFonts[0].id; wm.scale = 5; wm.opacity = 60;
+  $("wmText").value = "dase/"; $("wmPos").value = "br"; $("wmFont").value = wmFonts[0].id;
+  $("wmScale").value = 5; $("wmScaleVal").textContent = "5%";
+  $("wmOpacity").value = 60; $("wmOpacityVal").textContent = "60%";
+  $("wmFile").value = ""; $("wmLogoFile").value = "";
+  $("wmDrop").firstChild.textContent = "Carregar"; $("wmLogoDrop").firstChild.textContent = "Carregar";
+  $("wmMsg").textContent = "";
+  renderWatermark();
+};
+
+/* ---------- ABA 3: editor ---------- */
+const cropRatios = { orig:0, "1-1":1, "4-3":4/3, "16-9":16/9, "9-16":9/16 };
+const ed = { src:null, w:1080, h:1080, format:"png", bright:100, contrast:100, sat:100, blur:0 };
+const edCanvas = document.createElement("canvas");
+let edToken = 0;
+
+async function renderEditor(){
+  const token = ++edToken;
+  if(!ed.src){
+    $("edOut").style.display = "none"; $("edEmpty").style.display = "block";
+    $("edDownload").disabled = true; $("edCopy").disabled = true;
+    return;
+  }
+  const img = await loadImage(ed.src);
+  if(token !== edToken) return;
+  const c = edCanvas;
+  c.width = Math.max(1, Math.round(ed.w)); c.height = Math.max(1, Math.round(ed.h));
+  const ctx = c.getContext("2d");
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.filter = "brightness(" + ed.bright + "%) contrast(" + ed.contrast + "%) saturate(" + ed.sat + "%) blur(" + ed.blur + "px)";
+  const target = c.width / c.height;
+  const sr = img.naturalWidth / img.naturalHeight;
+  let sw = img.naturalWidth, sh = img.naturalHeight;
+  if(sr > target) sw = sh * target; else sh = sw / target;
+  ctx.drawImage(img, (img.naturalWidth - sw) / 2, (img.naturalHeight - sh) / 2, sw, sh, 0, 0, c.width, c.height);
+  ctx.filter = "none";
+  $("edOut").src = c.toDataURL(mimeFor(ed.format), 0.92);
+  $("edOut").style.display = "block"; $("edEmpty").style.display = "none";
+  $("edDownload").disabled = false; $("edCopy").disabled = false;
+}
+$("edFile").onchange = async (e) => {
+  const f = e.target.files[0]; if(!f) return;
+  const data = await readFileAsDataURL(f);
+  const img = await loadImage(data);
+  ed.src = data; ed.w = img.naturalWidth; ed.h = img.naturalHeight;
+  $("edW").value = ed.w; $("edH").value = ed.h;
+  setActiveChip($("edCrop"), "orig");
+  $("edDrop").firstChild.textContent = "Substituir";
+  renderEditor();
+};
+$("edW").oninput = (e) => { ed.w = +e.target.value || 1; renderEditor(); };
+$("edH").oninput = (e) => { ed.h = +e.target.value || 1; renderEditor(); };
+chips($("edCrop"), async (v) => {
+  const r = cropRatios[v];
+  if(!ed.src) return;
+  const img = await loadImage(ed.src);
+  if(r === 0){ ed.w = img.naturalWidth; ed.h = img.naturalHeight; }
+  else{
+    const base = Math.max(ed.w, ed.h) || img.naturalWidth;
+    ed.w = Math.round(r >= 1 ? base : base * r);
+    ed.h = Math.round(r >= 1 ? base / r : base);
+  }
+  $("edW").value = ed.w; $("edH").value = ed.h;
+  renderEditor();
+});
+$("edFormat").onchange = (e) => { ed.format = e.target.value; renderEditor(); };
+$("edBright").oninput = (e) => { ed.bright = +e.target.value; $("edBrightVal").textContent = ed.bright + "%"; renderEditor(); };
+$("edContrast").oninput = (e) => { ed.contrast = +e.target.value; $("edContrastVal").textContent = ed.contrast + "%"; renderEditor(); };
+$("edSat").oninput = (e) => { ed.sat = +e.target.value; $("edSatVal").textContent = ed.sat + "%"; renderEditor(); };
+$("edBlur").oninput = (e) => { ed.blur = +e.target.value; $("edBlurVal").textContent = ed.blur + "px"; renderEditor(); };
+async function edAct(mode){
+  if(!ed.src) return;
+  const blob = await canvasToBlob(edCanvas, mimeFor(ed.format), 0.92);
+  if(mode === "download"){ downloadBlob(blob, "imagem." + ed.format); $("edMsg").textContent = "Descarregado"; }
+  else { $("edMsg").textContent = (await copyBlob(blob)) ? "Copiado" : "Falhou"; }
+}
+$("edDownload").onclick = () => edAct("download");
+$("edCopy").onclick = () => edAct("copy");
+$("edClear").onclick = () => {
+  ed.src = null; ed.w = 1080; ed.h = 1080; ed.format = "png";
+  ed.bright = 100; ed.contrast = 100; ed.sat = 100; ed.blur = 0;
+  $("edW").value = 1080; $("edH").value = 1080; $("edFormat").value = "png";
+  $("edBright").value = 100; $("edBrightVal").textContent = "100%";
+  $("edContrast").value = 100; $("edContrastVal").textContent = "100%";
+  $("edSat").value = 100; $("edSatVal").textContent = "100%";
+  $("edBlur").value = 0; $("edBlurVal").textContent = "0px";
+  $("edFile").value = ""; $("edDrop").firstChild.textContent = "Carregar";
+  setActiveChip($("edCrop"), "orig");
+  $("edMsg").textContent = "";
+  renderEditor();
+};
+
+/* ---------- ABA 4: compressor ---------- */
+const cp = { src:null, origSize:0, quality:70, scale:100, format:"webp", blob:null, url:null };
+let cpToken = 0;
+function cpStats(w, h, size){
+  $("cpOrig").textContent = formatBytes(cp.origSize);
+  $("cpOut").textContent = formatBytes(size);
+  const saved = cp.origSize ? Math.max(0, 100 - (size / cp.origSize) * 100) : 0;
+  $("cpSaved").textContent = saved.toFixed(1) + "%";
+  $("cpSaved2").textContent = saved.toFixed(1) + "%";
+  $("cpRes").textContent = w + "×" + h;
+}
+async function renderCompressor(){
+  const token = ++cpToken;
+  if(!cp.src){
+    $("cpImg").style.display = "none"; $("cpEmpty").style.display = "block";
+    $("cpDownload").disabled = true; $("cpCopy").disabled = true;
+    cpStats(0, 0, 0);
+    return;
+  }
+  const img = await loadImage(cp.src);
+  if(token !== cpToken) return;
+  const c = document.createElement("canvas");
+  c.width = Math.max(1, Math.round((img.naturalWidth * cp.scale) / 100));
+  c.height = Math.max(1, Math.round((img.naturalHeight * cp.scale) / 100));
+  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+  const blob = await canvasToBlob(c, mimeFor(cp.format), cp.quality / 100);
+  if(token !== cpToken) return;
+  if(cp.url) URL.revokeObjectURL(cp.url);
+  cp.blob = blob; cp.url = URL.createObjectURL(blob);
+  $("cpImg").src = cp.url;
+  $("cpImg").style.display = "block"; $("cpEmpty").style.display = "none";
+  $("cpDownload").disabled = false; $("cpCopy").disabled = false;
+  cpStats(c.width, c.height, blob.size);
+}
+$("cpFile").onchange = async (e) => {
+  const f = e.target.files[0]; if(!f) return;
+  cp.origSize = f.size;
+  cp.src = await readFileAsDataURL(f);
+  $("cpDrop").firstChild.textContent = "Substituir";
+  renderCompressor();
+};
+$("cpQuality").oninput = (e) => { cp.quality = +e.target.value; $("cpQualityVal").textContent = cp.quality + "%"; renderCompressor(); };
+$("cpScale").oninput = (e) => { cp.scale = +e.target.value; $("cpScaleVal").textContent = cp.scale + "%"; renderCompressor(); };
+$("cpFormat").onchange = (e) => { cp.format = e.target.value; renderCompressor(); };
+async function cpAct(mode){
+  if(!cp.blob) return;
+  if(mode === "download"){ downloadBlob(cp.blob, "comprimida." + cp.format); $("cpMsg").textContent = "Descarregado"; }
+  else { $("cpMsg").textContent = (await copyBlob(cp.blob)) ? "Copiado" : "Falhou"; }
+}
+$("cpDownload").onclick = () => cpAct("download");
+$("cpCopy").onclick = () => cpAct("copy");
+$("cpClear").onclick = () => {
+  cp.src = null; cp.origSize = 0; cp.quality = 70; cp.scale = 100; cp.format = "webp"; cp.blob = null;
+  $("cpQuality").value = 70; $("cpQualityVal").textContent = "70%";
+  $("cpScale").value = 100; $("cpScaleVal").textContent = "100%";
+  $("cpFormat").value = "webp";
+  $("cpFile").value = ""; $("cpDrop").firstChild.textContent = "Carregar";
+  $("cpMsg").textContent = "";
+  renderCompressor();
+};
+
+/* ---------- arranque ---------- */
+let savedTheme = "light";
+try{ const t = localStorage.getItem("dase-theme"); if(t === "dark" || t === "light") savedTheme = t; }catch(e){}
+setTheme(savedTheme);
+refreshStorage();
+</script>
+</body>
+</html>
