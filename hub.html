@@ -1,74 +1,158 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="pt-PT" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>dase/hub — Dashboard</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+<title>dase/hub</title>
+
+<!-- 
+================================================================================
+NOTA DE PADRONIZAÇÃO DE INTERFACE / DESIGN SYSTEM PARA IA:
+Sempre que for criado ou gerado um novo site para o ecossistema pessoal, garante 
+que são mantidos rigorosamente os seguintes elementos e padrões de interface:
+
+1. ARQUITETURA E ARMAZENAMENTO:
+   - TODOS os sites do ecossistema têm de ser APENAS UM ficheiro HTML autónomo, sem dependências de terceiros, sem sistemas de login ou servidores externos.
+   - Todo o armazenamento e persistência de dados deve ser feito exclusivamente através de `localStorage`.
+
+2. IDENTIDADE VISUAL E IDENTIFICAÇÃO NAS ABAS:
+   - Utilizar SEMPRE o emoji "❓" como logótipo (favicon) nas abas do navegador, ficando separado da string do título.
+   - O título (tag <title>) deve conter APENAS o nome "dase/".
+
+3. CONCISÃO E SINTAXE DE TEXTO:
+   - Utilizar SEMPRE o mínimo texto possível em todos os elementos da interface.
+   - Exemplos: em caixas de pesquisa usar "Pesquisar" ou "Escreva algo..." em vez de "Pesquisar na caixa de pesquisa"; em botões usar "Repor" em vez de "Repor dados locais".
+   - NOTA IMPORTANTE: O conteúdo gerado deve ser SEMPRE traduzido por COMPLETO em português de Portugal.
+
+4. CORES, TRANSPARÊNCIAS E FONTES (OBRIGATÓRIO):
+   - É obrigatoriamente preciso usar as MESMAS cores, transparencias e estilos base definidos no `uibase.html`, a menos que o elemento específico adicionado não exista no `uibase.html`. Por exemplo, o botão "Repor" tem de ter exatamente a mesma cor, transparência, fonte, borda e raio de arredondamento.
+   - Se estiver a ser desenvolvido um site diferente onde cada elemento/botão tem uma tag ou categoria específica, aí sim podem ser aplicadas cores ou transparências dinâmicas/distintas para essas tags.
+   - As FONTES têm de ser exatamente as mesmas SEMPRE, sem quaisquer exceções (pilha de fontes: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif).
+
+5. COMPORTAMENTO DA SIDEBAR, ABAS E FERRAMENTAS (OBRIGATÓRIO):
+   - Os botões da sidebar NUNCA são para focar em algo na página principal.
+   - HIERARQUIA DA SIDEBAR (TOP-DOWN): 
+     1) **Abas de Navegação (em cima):** Só devem ser incluídas se o site possuir **mais do que 1 aba**. Se o site tiver apenas uma única vista/página, NÃO se deve incluir nenhum bloco, texto ou secção de abas. Se houver mais do que 1 aba, listar todas no topo.
+     2) **Divisor e Secção de Ferramentas (embaixo):** Caso existam ferramentas secundárias ou utilitários para demonstração, estes ficam obrigatoriamente colocados **embaixo** das abas (ou no topo caso o site tenha apenas 1 única aba e nenhuma aba de navegação), separados por um divisor subtil.
+
+6. FRAMES E BLOCOS DE INFORMAÇÃO:
+   - Os frames grandes com uma única informação cada não são obrigatórios, devendo ser usados apenas se fizerem sentido contextual.
+
+7. ÍCONES E EMOJIS NA SIDEBAR:
+   - Se forem utilizados ícones (na sidebar), utilizar obrigatoriamente EMOJIS com aspeto nativo/expressivo, evitando ícones monocromáticos ou vetoriais simples.
+
+8. SIDEBAR & LARGURA:
+   - Manter a barra lateral com 240px de largura fixos em desktop, preservando o comportamento responsivo (menu "drawer" deslizante para mobile).
+
+9. FOOTER DA SIDEBAR E CONTROLOS:
+   - Indicador / Barra de Progresso do LocalStorage, Botão de Reiniciar Dados com confirmação "dase", seletor de tema em formato pill e botão "D".
+
+10. RODAPÉ DA PÁGINA (FOOTER):
+    - Manter o texto de rodapé padrão: "Projeto pessoal, desenvolvido com apoio de IA. Sem suporte ou correções de erros fornecidos."
+================================================================================
+-->
+
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --mono: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace;
-    --sans: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
-    --dur: 200ms;
-    --radius: 14px;
-
     --bg: #F5F6FA;
     --panel: #FFFFFF;
-    --surface: #FFFFFF;
-    --surface-alt: #F5F6FA;
     --card: #F5F6FA;
     --sidebar: #FFFFFF;
     --text: #14161C;
-    --text-muted: #767C8C;
-    --text-faint: #767C8C;
     --muted: #767C8C;
-    --border: #E7E8EF;
-    --border-soft: #E7E8EF;
-    --line: #E7E8EF;
-    --primary: #2F5EFF;
     --accent: #2F5EFF;
-    --focus: #2F5EFF;
-    --danger: #FF5A3C;
     --accent2: #FF5A3C;
+    --line: #E7E8EF;
     --bar: #E2E5F5;
-    --shadow: 0 8px 24px rgba(20,20,20,0.06);
+    --header-height: 60px;
   }
-
-  html[data-theme="dark"] {
+  [data-theme="dark"] {
     --bg: #0E0F14;
     --panel: #14161D;
-    --surface: #14161D;
-    --surface-alt: #181A22;
     --card: #181A22;
     --sidebar: #12131A;
     --text: #F4F5F9;
-    --text-muted: #8B8FA3;
-    --text-faint: #8B8FA3;
     --muted: #8B8FA3;
-    --border: #262834;
-    --border-soft: #262834;
     --line: #262834;
     --bar: #21232D;
-    --shadow: 0 8px 24px rgba(0,0,0,0.4);
   }
 
   body {
-    font-family: var(--sans);
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
     background: var(--bg);
     color: var(--text);
     display: flex;
     min-height: 100vh;
     transition: background .25s, color .25s;
+    overflow-x: hidden;
   }
 
   a { color: inherit; text-decoration: none; }
-  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  /* ===== Sidebar ===== */
+  /* Mobile Header & Drawer */
+  .mobile-header {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--header-height);
+    background: var(--sidebar);
+    border-bottom: 1px solid var(--line);
+    padding: 0 16px;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 90;
+  }
+  .mobile-header .brand {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 0;
+  }
+  .mobile-header .brand span { color: var(--accent); }
+
+  .menu-toggle {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+  .menu-toggle:hover { background: var(--card); }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 98;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .sidebar-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Sidebar (240px fixos em desktop) */
   .sidebar {
-    width: 220px;
+    width: 240px;
     flex-shrink: 0;
     background: var(--sidebar);
     border-right: 1px solid var(--line);
@@ -78,26 +162,42 @@
     position: sticky;
     top: 0;
     height: 100vh;
-    overflow-y: auto;
+    z-index: 99;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .brand { font-size: 21px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 36px; }
+  .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+  }
+  .brand { font-size: 21px; font-weight: 800; letter-spacing: -0.5px; }
   .brand span { color: var(--accent); }
 
-  .nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .close-sidebar-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  .nav { display: flex; flex-direction: column; gap: 6px; flex: 1; }
   .nav-item {
     display: flex; align-items: center; gap: 12px;
     text-decoration: none; color: var(--muted);
-    font-family: var(--sans); font-size: 14px; font-weight: 600;
-    padding: 10px 12px; border-radius: 10px;
+    font-family: inherit;
+    font-size: 14.5px; font-weight: 600;
+    padding: 12px 14px; border-radius: 10px;
     border: none; background: transparent; cursor: pointer;
     width: 100%; text-align: left;
+    transition: background 0.2s, color 0.2s;
   }
-  .nav-item .ico {
-    font-size: 16px; width: 18px; text-align: center;
-    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
-  }
-  .nav-item[aria-pressed="true"] { background: var(--accent); color: #fff; }
-  .nav-item:not([aria-pressed="true"]):hover { background: var(--card); color: var(--text); }
+  .nav-item .ico { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+  .nav-item[aria-pressed="true"], .nav-item.active { background: var(--accent); color: #fff; }
+  .nav-item:not([aria-pressed="true"]):not(.active):hover { background: var(--card); color: var(--text); }
 
   .sidebar-item { position: relative; }
   .side-flyout {
@@ -109,7 +209,7 @@
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 10px;
-    box-shadow: var(--shadow);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
     overflow: hidden;
     z-index: 250;
   }
@@ -117,45 +217,65 @@
 
   .more-item {
     display: flex; align-items: center; gap: 8px;
-    padding: 10px 12px;
-    font-family: var(--sans); font-size: 13px; font-weight: 600;
+    padding: 10px 14px;
+    font-family: inherit; font-size: 13.5px; font-weight: 600;
     color: var(--muted);
     background: transparent; border: none; text-align: left;
     cursor: pointer; width: 100%;
   }
   .more-item:hover { background: var(--card); color: var(--text); }
-  .more-item.danger { color: var(--accent2); }
-  .more-item.danger:hover { background: var(--accent2); color: #fff; }
 
-  /* Controls at sidebar bottom */
+  /* Sidebar Footer */
   .sidebar-footer {
-    display: flex; flex-direction: column; gap: 12px;
+    display: flex; flex-direction: column; gap: 14px;
     padding-top: 16px; border-top: 1px solid var(--line);
   }
 
   .storage-indicator {
-    display: flex; flex-direction: column; gap: 4px;
-    font-size: 11.5px; color: var(--muted); font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
   }
   .storage-header { display: flex; justify-content: space-between; }
-  .storage-bar-track { height: 6px; border-radius: 4px; background: var(--bar); overflow: hidden; }
-  .storage-bar-fill { height: 100%; width: 0%; background: var(--accent); border-radius: 4px; transition: width .3s ease; }
+  .storage-bar-track {
+    height: 6px;
+    border-radius: 4px;
+    background: var(--bar);
+    overflow: hidden;
+  }
+  .storage-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
 
   .reset-btn {
     width: 100%;
-    padding: 8px 12px;
+    padding: 10px 12px;
     border: 1px solid var(--line);
     border-radius: 10px;
     background: var(--card);
     color: var(--muted);
-    font-family: var(--sans);
-    font-size: 12.5px;
+    font-family: inherit;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     transition: all .2s ease;
   }
-  .reset-btn:hover { background: var(--accent2); color: #fff; border-color: var(--accent2); }
+  .reset-btn:hover {
+    background: var(--accent2);
+    color: #ffffff;
+    border-color: var(--accent2);
+  }
 
   .user-box { display: flex; align-items: center; gap: 10px; }
   .theme-pill-switch {
@@ -165,7 +285,7 @@
   }
   .theme-pill-btn {
     flex: 1; border: none; background: transparent; color: var(--muted);
-    padding: 6px 0; border-radius: 16px; cursor: pointer;
+    padding: 8px 0; border-radius: 16px; cursor: pointer;
     font-size: 13px; display: flex; align-items: center; justify-content: center;
     transition: all .2s ease;
   }
@@ -174,7 +294,7 @@
     box-shadow: 0 2px 6px rgba(0,0,0,0.08); font-weight: 700;
   }
   .icon-btn {
-    width: 36px; height: 36px; border-radius: 50%;
+    width: 38px; height: 38px; border-radius: 50%;
     background: var(--card); border: 1px solid var(--line);
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; text-decoration: none; color: var(--text);
@@ -183,38 +303,40 @@
   }
   .icon-btn:hover { background: var(--bar); }
 
-  /* ===== Main ===== */
+  /* Main Area */
   .main {
-    flex: 1; min-width: 0;
+    flex: 1;
+    min-width: 0;
     padding: 32px 40px 60px;
-    max-width: 1100px; margin: 0 auto;
-    display: flex; flex-direction: column;
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
   }
   .wrap { width: 100%; display: flex; flex-direction: column; flex: 1; }
 
-  .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+  .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
   .top-row h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; }
   .top-row .sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
 
-  /* ===== AI grid ===== */
+  /* AI Grid */
   section.deck { margin-bottom: 22px; }
-
   .ai-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 14px;
   }
-
   .ai-card {
     position: relative;
     background: var(--card);
     border: 1px solid var(--line);
     border-left: 4px solid var(--accent-color, var(--accent));
-    border-radius: var(--radius);
+    border-radius: 14px;
     padding: 18px 20px 16px;
     cursor: pointer;
     display: flex; flex-direction: column; gap: 3px;
-    transition: transform var(--dur) ease, box-shadow var(--dur) ease;
+    transition: transform .2s ease, box-shadow .2s ease;
   }
   .ai-card:hover, .ai-card:focus-visible {
     transform: translateY(-2px);
@@ -223,42 +345,40 @@
   .ai-card:active { transform: translateY(0); }
   .ai-card .name { font-size: 15px; font-weight: 700; }
   .ai-card .desc { font-size: 12px; color: var(--muted); font-weight: 500; }
-  .ai-card .ai-badges { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
-  .ai-card .cap-icon { display: inline-flex; color: var(--muted); }
+  .ai-card .ai-badges { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; }
   .ai-card .keycap {
     position: absolute; top: 12px; right: 12px;
-    font-family: var(--mono); font-size: 10px; color: var(--muted);
-    border: 1px solid var(--line); border-radius: 4px;
-    padding: 2px 5px; background: var(--panel);
+    font-size: 10.5px; font-weight: 700; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 2px 6px; background: var(--panel);
   }
 
-  /* ===== Panels ===== */
-  .card {
+  /* Panels */
+  .panel-box {
     background: var(--card);
     border: 1px solid var(--line);
     border-radius: 16px;
     padding: 22px 24px;
+    margin-bottom: 22px;
   }
-  .card h2 {
+  .panel-box h2 {
     font-size: 14.5px;
     font-weight: 700;
     margin-bottom: 18px;
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
   }
   .draft-hint { font-size: 12.5px; font-weight: 500; color: var(--muted); }
-  .draft-card { margin-bottom: 22px; }
-
   .draft-meta { font-size: 11.5px; color: var(--muted); font-weight: 600; margin-top: 8px; }
 
   textarea#draft, textarea#notes {
     width: 100%;
-    min-height: 160px;
+    min-height: 150px;
     resize: vertical;
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 12px;
     color: var(--text);
-    font-family: var(--sans);
+    font-family: inherit;
     font-size: 13.5px;
     padding: 12px 14px;
     line-height: 1.6;
@@ -267,11 +387,10 @@
   textarea#draft:focus, textarea#notes:focus { border-color: var(--accent); }
   textarea#notes { min-height: 110px; }
 
-  .secondary-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; }
-  .panel-col { display: flex; flex-direction: column; gap: 12px; }
+  .cols { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; margin-bottom: 22px; }
+  .cols .panel-box { margin-bottom: 0; }
 
   .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-
   .draft-controls {
     display: flex; flex-wrap: wrap;
     justify-content: space-between; align-items: center;
@@ -279,7 +398,7 @@
   }
   .draft-controls .row { margin-top: 0; }
 
-  /* Chips (redirects) */
+  /* Chips (Atalhos / Links) */
   .chip {
     display: inline-flex; align-items: center;
     background: var(--panel);
@@ -297,46 +416,11 @@
   .chip-add { border-style: dashed; color: var(--accent); font-weight: 700; padding: 6px 14px; }
   .chip-add:hover { background: var(--panel); border-color: var(--accent); }
 
-  .mini-input, .mini-textarea {
-    width: 100%;
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    color: var(--text);
-    font-family: var(--sans);
-    font-size: 14px;
-    padding: 10px 12px;
-    outline: none;
-  }
-  .mini-input:focus, .mini-textarea:focus { border-color: var(--accent); }
-  .mini-textarea { min-height: 80px; resize: vertical; }
-
-  .pm-form { padding: 0 24px; display: flex; flex-direction: column; gap: 10px; }
-  .pm-list { padding: 12px 24px 4px; max-height: 220px; overflow-y: auto; }
-  .pm-item {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 11px 0;
-    border-bottom: 1px solid var(--line);
-    font-size: 13.5px; font-weight: 600; color: var(--text);
-  }
-  .pm-item:last-child { border-bottom: none; }
-  .pm-item-remove {
-    font-size: 11.5px; font-weight: 700; color: var(--muted);
-    cursor: pointer; background: transparent; border: none; padding: 0;
-  }
-  .pm-item-remove:hover { color: var(--accent2); }
-  .pm-empty { padding: 10px 0; font-size: 13px; color: var(--muted); }
-
-  .welcome-body { padding: 0 24px; font-size: 13px; line-height: 1.4; color: var(--muted); }
-  .welcome-body p { margin: 0 0 12px; }
-  .welcome-body strong { color: var(--text); }
-  .welcome-actions { padding: 16px 24px 0; margin-top: 0; justify-content: flex-end; }
-
   .prompt-dropdown {
     background: var(--panel);
     border: 1px solid var(--line);
     color: var(--muted);
-    font-family: var(--sans);
+    font-family: inherit;
     font-size: 12.5px; font-weight: 600;
     padding: 7px 10px;
     border-radius: 20px;
@@ -351,23 +435,89 @@
     background: var(--panel);
     border: 1px solid var(--line);
     color: var(--text);
-    font-family: var(--sans);
+    font-family: inherit;
     font-size: 13px; font-weight: 600;
     padding: 8px 14px;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
     transition: all .2s ease;
   }
   .btn:hover { border-color: var(--accent); }
   .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.primary:hover { opacity: 0.9; }
   .btn.icon-only { padding: 7px 12px; font-size: 14px; line-height: 1; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
   .btn.add { border-style: dashed; color: var(--accent); font-weight: 700; }
   .btn.danger-outline { color: var(--accent2); border-color: var(--accent2); background: transparent; }
   .btn.danger-outline:hover { background: var(--accent2); color: #fff; }
   .btn:disabled { opacity: .5; cursor: not-allowed; }
 
-  /* Shortcuts rows */
+  /* Minimal Mode */
+  body.minimal-mode .top-row,
+  body.minimal-mode .draft-card,
+  body.minimal-mode .cols,
+  body.minimal-mode footer { display: none; }
+  body.minimal-mode .main { justify-content: center; min-height: 100vh; }
+  body.minimal-mode .ai-grid { max-width: 720px; margin: 0 auto; }
+
+  /* Modals */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    padding: 16px;
+  }
+  .modal-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal-box {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 24px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  }
+  .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; }
+  .modal-desc { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.4; }
+
+  .mini-input, .mini-textarea {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    margin-bottom: 10px;
+  }
+  .mini-input:focus, .mini-textarea:focus { border-color: var(--accent); }
+  .mini-textarea { min-height: 80px; resize: vertical; }
+
+  .pm-list { max-height: 200px; overflow-y: auto; margin-top: 10px; }
+  .pm-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13.5px; font-weight: 600; color: var(--text);
+  }
+  .pm-item:last-child { border-bottom: none; }
+  .pm-item-remove {
+    font-size: 12px; font-weight: 700; color: var(--muted);
+    cursor: pointer; background: transparent; border: none; padding: 0;
+  }
+  .pm-item-remove:hover { color: var(--accent2); }
+  .pm-empty { padding: 8px 0; font-size: 13px; color: var(--muted); }
+
   .shortcut-row {
     display: flex; justify-content: space-between; align-items: center;
     padding: 11px 0;
@@ -381,49 +531,7 @@
     padding: 4px 10px; border-radius: 20px;
   }
 
-  /* Minimal mode */
-  body.minimal-mode .top-row,
-  body.minimal-mode .draft-card,
-  body.minimal-mode .secondary-grid,
-  body.minimal-mode footer { display: none; }
-  body.minimal-mode .main { justify-content: center; min-height: 100vh; }
-  body.minimal-mode .ai-grid { max-width: 720px; margin: 0 auto; }
-
-  /* ===== Modals ===== */
-  .cmdk-overlay {
-    display: none;
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(4px);
-    align-items: center; justify-content: center;
-    padding: 24px;
-    z-index: 1000;
-  }
-  .cmdk-overlay.open { display: flex; }
-  .cmdk-box {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 24px 0;
-    width: 100%;
-    max-width: 420px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-    overflow: hidden;
-  }
-  .cmdk-input {
-    width: calc(100% - 48px);
-    margin: 0 24px 12px;
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    color: var(--text);
-    font-size: 14px;
-    font-family: var(--sans);
-    padding: 10px 12px;
-    outline: none;
-  }
-  .cmdk-input:focus { border-color: var(--accent); }
-  .cmdk-list { max-height: 320px; overflow-y: auto; padding: 0 24px; }
+  .cmdk-list { max-height: 300px; overflow-y: auto; }
   .cmdk-item {
     padding: 11px 0;
     display: flex; justify-content: space-between; align-items: center;
@@ -438,13 +546,11 @@
     padding: 4px 10px; border-radius: 20px;
   }
   .cmdk-item.active, .cmdk-item:hover { color: var(--accent); }
-  .cmdk-empty { padding: 14px 24px; font-size: 13px; color: var(--muted); }
-  .cmdk-hint { padding: 14px 24px 0; font-size: 12px; color: var(--muted); }
+  .cmdk-empty { padding: 12px 0; font-size: 13px; color: var(--muted); }
+  .modal-hint { padding-top: 12px; font-size: 12px; color: var(--muted); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
 
-  .shortcuts-modal-title { font-size: 16px; font-weight: 700; padding: 0 24px 12px; }
-  .shortcuts-modal-body { padding: 0 24px; }
-
-  /* ===== Error banner ===== */
+  /* Error Banner */
   .error-banner {
     display: none;
     align-items: center; justify-content: space-between; gap: 12px;
@@ -452,7 +558,7 @@
     z-index: 2000;
     background: var(--accent2);
     color: #fff;
-    font-family: var(--sans);
+    font-family: inherit;
     font-size: 13px; font-weight: 600;
     padding: 12px 18px;
   }
@@ -466,7 +572,7 @@
     flex-shrink: 0;
   }
 
-  /* ===== Footer ===== */
+  /* Footer */
   footer {
     margin-top: auto;
     padding-top: 40px;
@@ -480,67 +586,78 @@
   }
 
   @media (max-width: 900px) {
-    body { flex-direction: column; }
+    .mobile-header { display: flex; }
+    .close-sidebar-btn { display: block; }
+    .sidebar-overlay { display: block; }
+
     .sidebar {
-      width: 100%; height: auto; position: sticky;
-      flex-direction: row; align-items: center;
-      padding: 12px 16px;
-      border-right: none; border-bottom: 1px solid var(--line);
-      gap: 12px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      transform: translateX(-100%);
+      box-shadow: 5px 0 25px rgba(0,0,0,0.15);
     }
-    .brand { margin-bottom: 0; }
-    .nav { flex-direction: row; flex: 1; overflow-x: auto; gap: 2px; }
-    .nav-item { padding: 10px; gap: 0; font-size: 0; }
-    .nav-item .ico { font-size: 16px; }
-    .sidebar-footer { border-top: none; padding-top: 0; flex-direction: row; align-items: center; }
-    .reset-btn { width: auto; }
-    .side-flyout { left: auto; right: 0; min-width: 160px; }
-    .storage-indicator { display: none; }
-    .secondary-grid { grid-template-columns: 1fr; }
-    .main { padding: 24px; }
+    .sidebar.open { transform: translateX(0); }
+
+    .main {
+      padding: 20px 16px 40px;
+      margin-top: var(--header-height);
+    }
+
+    .cols { grid-template-columns: 1fr; gap: 16px; }
   }
 </style>
 </head>
 <body>
 
 <div id="error-banner" class="error-banner">
-  <span>⚠ Something went wrong. Try refreshing the page — if it keeps happening, open the browser console (F12) for details.</span>
-  <button id="error-banner-close" type="button" aria-label="Dismiss">✕</button>
+  <span>⚠️ Ocorreu um erro. Atualiza a página para continuar.</span>
+  <button id="error-banner-close" type="button" aria-label="Fechar">✕</button>
 </div>
 
-<div class="sidebar">
+<header class="mobile-header">
   <div class="brand">dase<span>/hub</span></div>
+  <button class="menu-toggle" id="menuToggle" type="button" aria-label="Menu">☰</button>
+</header>
 
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="brand">dase<span>/hub</span></div>
+    <button class="close-sidebar-btn" id="closeSidebarBtn" type="button" aria-label="Fechar">✕</button>
+  </div>
+
+  <!-- SITE DE VISTA ÚNICA: SEM BLOCO DE ABAS, APENAS FERRAMENTAS -->
   <nav class="nav">
-    <button class="nav-item" id="cmdk-trigger" type="button" title="Search">
-      <span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
-      Search
+    <button class="nav-item" id="cmdk-trigger" type="button">
+      <span class="ico">🔍</span> Pesquisar
     </button>
 
     <button class="nav-item" id="minimal-toggle" aria-pressed="false" type="button">
-      <span class="ico">◧</span> Minimal Mode
+      <span class="ico">🎯</span> Modo Foco
     </button>
 
     <div class="sidebar-item">
       <button class="nav-item" id="save-trigger" aria-haspopup="true" aria-expanded="false" type="button">
-        <span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg></span>
-        Data
+        <span class="ico">💾</span> Dados
       </button>
       <div class="side-flyout" id="save-dropdown">
-        <button class="more-item" id="export-data" type="button">⭳ Export data</button>
-        <button class="more-item" id="import-data" type="button">⭱ Import data</button>
+        <button class="more-item" id="export-data" type="button">📥 Exportar</button>
+        <button class="more-item" id="import-data" type="button">📤 Importar</button>
       </div>
     </div>
 
     <button class="nav-item" id="shortcuts-trigger" type="button">
-      <span class="ico">?</span> Shortcuts
+      <span class="ico">⌨️</span> Atalhos
     </button>
   </nav>
 
   <div class="sidebar-footer">
     <div class="storage-indicator">
       <div class="storage-header">
-        <span>Storage</span>
+        <span>Armazenamento</span>
         <span id="storageText">0 KB / 5 MB</span>
       </div>
       <div class="storage-bar-track">
@@ -548,14 +665,14 @@
       </div>
     </div>
 
-    <button class="reset-btn" id="reset-storage" type="button">↺ Reset Data</button>
+    <button class="reset-btn" id="reset-storage" type="button">↺ Repor</button>
 
     <div class="user-box">
       <div class="theme-pill-switch">
-        <button class="theme-pill-btn" id="btnLight" type="button" aria-label="Light mode">☀</button>
-        <button class="theme-pill-btn" id="btnDark" type="button" aria-label="Dark mode">☾</button>
+        <button class="theme-pill-btn" id="btnLight" type="button" aria-label="Modo Claro">☀</button>
+        <button class="theme-pill-btn" id="btnDark" type="button" aria-label="Modo Escuro">☾</button>
       </div>
-      <a class="icon-btn" id="dase-btn" href="https://donodaseves.github.io/dase/" target="_blank" rel="noopener" title="Go to website">D</a>
+      <a class="icon-btn" id="dase-btn" href="https://donodaseves.github.io/dase/" target="_blank" rel="noopener" title="Ir para o site">D</a>
     </div>
   </div>
 
@@ -566,7 +683,7 @@
   <div class="top-row">
     <div>
       <h1>Hub</h1>
-      <div class="sub">Your AI models, drafts and quick links in one place.</div>
+      <div class="sub">Modelos de IA, rascunhos e ligações rápidas.</div>
     </div>
   </div>
 
@@ -575,107 +692,100 @@
       <div class="ai-grid" id="ai-grid"></div>
     </section>
 
-    <div class="card draft-card">
-      <h2>Draft <span class="draft-hint">press / to jump here</span></h2>
-      <textarea id="draft" placeholder="Write or paste a prompt here..."></textarea>
-      <div class="draft-meta" id="draft-meta">0 words · 0 characters · ~0 tokens</div>
+    <div class="panel-box draft-card">
+      <h2>Rascunho <span class="draft-hint">prime / para escrever</span></h2>
+      <textarea id="draft" placeholder="Escreve algo..."></textarea>
+      <div class="draft-meta" id="draft-meta">0 palavras · 0 caracteres · ~0 tokens</div>
       <div class="draft-controls">
         <div class="row">
-          <button class="btn primary" id="copy-draft">Copy</button>
-          <button class="btn" id="save-draft">Save .txt</button>
-          <button class="btn danger-outline" id="clear-draft">Clear</button>
+          <button class="btn primary" id="copy-draft" type="button">Copiar</button>
+          <button class="btn" id="save-draft" type="button">Guardar .txt</button>
+          <button class="btn danger-outline" id="clear-draft" type="button">Limpar</button>
         </div>
         <div class="row" id="prompt-lib">
           <select class="prompt-dropdown" id="dd-start"></select>
           <select class="prompt-dropdown" id="dd-end"></select>
           <select class="prompt-dropdown" id="dd-mood"></select>
           <select class="prompt-dropdown" id="dd-custom"></select>
-          <button class="btn icon-only add" id="prompt-manager-trigger" type="button" title="My Prompts" aria-label="My Prompts">+</button>
+          <button class="btn icon-only add" id="prompt-manager-trigger" type="button" title="Prompts" aria-label="Prompts">+</button>
         </div>
       </div>
     </div>
 
-    <section class="secondary-grid">
-      <div class="panel-col">
-        <div class="card">
-          <h2>Notes</h2>
-          <textarea id="notes" placeholder="Quick notes..."></textarea>
-          <div class="row">
-            <button class="btn primary" id="notes-copy">Copy</button>
-            <button class="btn" id="notes-save">Save .txt</button>
-            <button class="btn danger-outline" id="notes-clear">Clear</button>
-          </div>
+    <section class="cols">
+      <div class="panel-box">
+        <h2>Notas</h2>
+        <textarea id="notes" placeholder="Escreve algo..."></textarea>
+        <div class="row">
+          <button class="btn primary" id="notes-copy" type="button">Copiar</button>
+          <button class="btn" id="notes-save" type="button">Guardar .txt</button>
+          <button class="btn danger-outline" id="notes-clear" type="button">Limpar</button>
         </div>
       </div>
 
-      <div class="panel-col">
-        <div class="card">
-          <h2>Redirects</h2>
-          <div class="row" id="redirect-links"></div>
-        </div>
+      <div class="panel-box">
+        <h2>Ligações</h2>
+        <div class="row" id="redirect-links"></div>
       </div>
     </section>
 
-    <footer>Personal project, built with AI assistance. No support or bug fixes provided.</footer>
+    <footer>Projeto pessoal, desenvolvido com apoio de IA. Sem suporte ou correções de erros fornecidos.</footer>
   </div>
 </div>
 
-<div class="cmdk-overlay" id="cmdk-overlay">
-  <div class="cmdk-box">
-    <input type="text" id="cmdk-input" class="cmdk-input" placeholder="Search models and links..." autocomplete="off" spellcheck="false">
+<!-- MODAL PESQUISAR -->
+<div class="modal-overlay" id="cmdk-overlay">
+  <div class="modal-box">
+    <input type="text" id="cmdk-input" class="mini-input" placeholder="Pesquisar..." autocomplete="off" spellcheck="false">
     <div class="cmdk-list" id="cmdk-list"></div>
-    <div class="cmdk-hint">↑↓ navigate · Enter open · Esc close</div>
+    <div class="modal-hint">↑↓ navegar · Enter abrir · Esc fechar</div>
   </div>
 </div>
 
-<div class="cmdk-overlay" id="shortcuts-overlay">
-  <div class="cmdk-box">
-    <div class="shortcuts-modal-title">Shortcuts</div>
-    <div id="shortcuts-body" class="shortcuts-modal-body"></div>
-    <div class="row welcome-actions">
-      <button class="btn primary" id="shortcuts-close" type="button">Close</button>
+<!-- MODAL ATALHOS -->
+<div class="modal-overlay" id="shortcuts-overlay">
+  <div class="modal-box">
+    <div class="modal-title">Atalhos</div>
+    <div id="shortcuts-body"></div>
+    <div class="modal-actions">
+      <button class="btn primary" id="shortcuts-close" type="button">Fechar</button>
     </div>
   </div>
 </div>
 
-<div class="cmdk-overlay" id="prompt-manager-overlay">
-  <div class="cmdk-box">
-    <div class="shortcuts-modal-title">My Prompts</div>
-    <div class="pm-form">
-      <input type="text" id="pm-label" class="mini-input" placeholder="Label (e.g. MyPrompt)">
-      <textarea id="pm-text" class="mini-textarea" placeholder="Prompt text..."></textarea>
-      <button class="btn primary" id="pm-add" type="button">Add prompt</button>
-    </div>
+<!-- MODAL PROMPTS PERSONALIZADOS -->
+<div class="modal-overlay" id="prompt-manager-overlay">
+  <div class="modal-box">
+    <div class="modal-title">Prompts</div>
+    <input type="text" id="pm-label" class="mini-input" placeholder="Nome">
+    <textarea id="pm-text" class="mini-textarea" placeholder="Escreve algo..."></textarea>
+    <button class="btn primary" id="pm-add" type="button" style="width:100%;">Adicionar</button>
     <div id="pm-list" class="pm-list"></div>
-    <div class="cmdk-hint">Esc close</div>
+    <div class="modal-hint">Esc fechar</div>
   </div>
 </div>
 
-<div class="cmdk-overlay" id="redirect-manager-overlay">
-  <div class="cmdk-box">
-    <div class="shortcuts-modal-title">Add Redirect</div>
-    <div class="pm-form">
-      <input type="text" id="redirect-label-input" class="mini-input" placeholder="Label">
-      <input type="text" id="redirect-url-input" class="mini-input" placeholder="https://...">
-      <button class="btn primary" id="redirect-add-btn" type="button">Add redirect</button>
-    </div>
+<!-- MODAL LIGAÇÕES -->
+<div class="modal-overlay" id="redirect-manager-overlay">
+  <div class="modal-box">
+    <div class="modal-title">Ligações</div>
+    <input type="text" id="redirect-label-input" class="mini-input" placeholder="Nome">
+    <input type="text" id="redirect-url-input" class="mini-input" placeholder="https://...">
+    <button class="btn primary" id="redirect-add-btn" type="button" style="width:100%;">Adicionar</button>
     <div id="rm-list" class="pm-list"></div>
-    <div class="cmdk-hint">Esc close</div>
+    <div class="modal-hint">Esc fechar</div>
   </div>
 </div>
 
-<div class="cmdk-overlay" id="reset-confirm-overlay">
-  <div class="cmdk-box">
-    <div class="shortcuts-modal-title">Reset LocalStorage</div>
-    <div class="welcome-body">
-      <p>Type <strong>"dase"</strong> below to confirm deleting all local data.</p>
-    </div>
-    <div class="pm-form">
-      <input type="text" id="reset-confirm-input" class="mini-input" placeholder="dase" autocomplete="off" spellcheck="false">
-    </div>
-    <div class="row welcome-actions">
-      <button class="btn danger-outline" id="reset-confirm-btn" type="button" disabled>Delete All</button>
-      <button class="btn" id="reset-cancel-btn" type="button">Cancel</button>
+<!-- MODAL REPOR DADOS -->
+<div class="modal-overlay" id="reset-confirm-overlay">
+  <div class="modal-box">
+    <div class="modal-title">Repor LocalStorage</div>
+    <p class="modal-desc">Escreve <strong>"dase"</strong> para confirmar.</p>
+    <input type="text" id="reset-confirm-input" class="mini-input" placeholder="dase" autocomplete="off" spellcheck="false">
+    <div class="modal-actions">
+      <button class="btn" id="reset-cancel-btn" type="button">Cancelar</button>
+      <button class="btn danger-outline" id="reset-confirm-btn" type="button" disabled>Eliminar</button>
     </div>
   </div>
 </div>
@@ -700,6 +810,26 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
   "use strict";
   try {
 
+  /* ============ MOBILE SIDEBAR DRAWER ============ */
+  var sidebar = document.getElementById("sidebar");
+  var sidebarOverlay = document.getElementById("sidebarOverlay");
+
+  function openSidebar() {
+    sidebar.classList.add("open");
+    sidebarOverlay.classList.add("active");
+  }
+  function closeSidebar() {
+    sidebar.classList.remove("open");
+    sidebarOverlay.classList.remove("active");
+  }
+
+  document.getElementById("menuToggle").addEventListener("click", function () {
+    if (sidebar.classList.contains("open")) closeSidebar();
+    else openSidebar();
+  });
+  document.getElementById("closeSidebarBtn").addEventListener("click", closeSidebar);
+  sidebarOverlay.addEventListener("click", closeSidebar);
+
   /* ============ SAFE STORAGE HELPERS ============ */
   function safeGet(key, fallback) {
     try {
@@ -718,13 +848,13 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
     try { 
       localStorage.removeItem(key); 
       updateStorageVisualizer();
-    } catch (e) { /* ignore */ }
+    } catch (e) {}
   }
   function safeClear() {
     try { 
       localStorage.clear(); 
       updateStorageVisualizer();
-    } catch (e) { /* ignore */ }
+    } catch (e) {}
   }
 
   /* ============ STORAGE VISUALIZER ============ */
@@ -736,7 +866,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
           totalBytes += ((localStorage[key].length + key.length) * 2);
         }
       }
-      var maxBytes = 5 * 1024 * 1024; // ~5MB
+      var maxBytes = 5 * 1024 * 1024;
       var kb = (totalBytes / 1024).toFixed(1);
       var percentage = Math.min((totalBytes / maxBytes) * 100, 100).toFixed(1);
 
@@ -756,6 +886,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
   }
 
   function openModal(id) {
+    closeSidebar();
     var el = document.getElementById(id);
     if (!el) return;
     lastFocusedBeforeModal = document.activeElement;
@@ -775,7 +906,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
 
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Tab") return;
-    var openOverlays = document.querySelectorAll(".cmdk-overlay.open");
+    var openOverlays = document.querySelectorAll(".modal-overlay.open");
     if (!openOverlays.length) return;
     var modal = openOverlays[openOverlays.length - 1];
     var focusable = getFocusableIn(modal);
@@ -793,51 +924,49 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
 
   /* ============ DATA ============ */
   var AIS = [
-    { name: "ChatGPT",    desc: "General purpose",  url: "https://chat.openai.com/",      accent: "#10A37F", caps: ["files", "images", "web"] },
-    { name: "Claude",     desc: "Writing & code",   url: "https://claude.ai/new",         accent: "#D97757", caps: ["files", "web"]           },
+    { name: "ChatGPT",    desc: "Uso geral",        url: "https://chat.openai.com/",      accent: "#10A37F", caps: ["files", "images", "web"] },
+    { name: "Claude",     desc: "Escrita e código", url: "https://claude.ai/new",         accent: "#D97757", caps: ["files", "web"]           },
     { name: "Gemini",     desc: "Multimodal",       url: "https://gemini.google.com/app", accent: "#4E8CFF", caps: ["files", "images", "web"] },
-    { name: "Mistral",    desc: "Open-weight / EU", url: "https://chat.mistral.ai/chat",  accent: "#FF7000", caps: ["files", "images"]        },
-    { name: "Perplexity", desc: "Web research",     url: "https://www.perplexity.ai/",    accent: "#20B8CD", caps: ["files", "web"]           },
-    { name: "Grok",       desc: "Real-time data",   url: "https://grok.com/",             accent: "#9AA0A6", caps: ["files", "images", "web"] },
-    { name: "DeepSeek",   desc: "Reasoning & code", url: "https://chat.deepseek.com/",    accent: "#4D6BFE", caps: ["files"]                  },
-    { name: "DuckDuckGo", desc: "Privacy",          url: "https://duckduckgo.com/aichat", accent: "#DE5833", caps: ["files", "images"]        }
+    { name: "Mistral",    desc: "Peso aberto / UE", url: "https://chat.mistral.ai/chat",  accent: "#FF7000", caps: ["files", "images"]        },
+    { name: "Perplexity", desc: "Pesquisa web",     url: "https://www.perplexity.ai/",    accent: "#20B8CD", caps: ["files", "web"]           },
+    { name: "Grok",       desc: "Tempo real",       url: "https://grok.com/",             accent: "#9AA0A6", caps: ["files", "images", "web"] },
+    { name: "DeepSeek",   desc: "Raciocínio",       url: "https://chat.deepseek.com/",    accent: "#4D6BFE", caps: ["files"]                  },
+    { name: "DuckDuckGo", desc: "Privacidade",      url: "https://duckduckgo.com/aichat", accent: "#DE5833", caps: ["files", "images"]        }
   ];
 
   var PROMPTS_CONTENT = [
-    { label: "Sum",       text: "Summarize the following text concisely, focusing on the main points:\n\n" },
-    { label: "Explain",   text: "Explain the following concept in simple terms, as if I were a beginner:\n\n" },
-    { label: "Fix",       text: "Please correct the grammar, flow, and clarity of the following text while keeping the original meaning intact:\n\n" },
-    { label: "Translate", text: "Translate the following text into natural sounding \"Language\":\n\n" },
-    { label: "List",      text: "Organize the following information into a clear bullet-point list with a brief introduction and conclusion:\n\n" },
-    { label: "Ideas",     text: "Give me 5 creative ideas or perspectives regarding the following topic:\n\n" },
-    { label: "Review",    text: "Review the following text and point out any logical fallacies or missing information:\n\n" }
+    { label: "Resumir",   text: "Resume o seguinte texto de forma concisa, focando nos pontos principais:\n\n" },
+    { label: "Explicar",  text: "Explica o seguinte conceito em termos simples, como se eu fosse iniciante:\n\n" },
+    { label: "Corrigir",  text: "Corrige a gramática, fluidez e clareza do seguinte texto mantendo o sentido original:\n\n" },
+    { label: "Traduzir",  text: "Traduz o seguinte texto para português de Portugal natural:\n\n" },
+    { label: "Listar",    text: "Organiza a seguinte informação numa lista clara com uma breve introdução e conclusão:\n\n" },
+    { label: "Ideias",    text: "Dá-me 5 ideias criativas ou perspetivas sobre o seguinte tema:\n\n" },
+    { label: "Rever",     text: "Revê o seguinte texto e aponta eventuais falhas lógicas ou informação em falta:\n\n" }
   ];
 
   var PROMPTS_STYLE = [
-    { label: "Lang",      text: "From now on, please respond to all my messages exclusively in [language]." },
-    { label: "Assume",    text: "Mention any assumptions you are making in your answer." },
-    { label: "Brief",     text: "Keep your answer brief and avoid unnecessary filler words." },
-    { label: "Table",     text: "Present the pros and cons in a table format." },
-    { label: "Steps",     text: "Break this down into a step-by-step guide." },
-    { label: "Ask",       text: "Before answering, ask me any questions you need to clarify my request." }
+    { label: "Idioma",    text: "A partir de agora, responde a todas as minhas mensagens exclusivamente em português de Portugal." },
+    { label: "Suposições",text: "Menciona quaisquer suposições que estejas a fazer na tua resposta." },
+    { label: "Breve",     text: "Mantém a tua resposta breve e evita palavras desnecessárias." },
+    { label: "Tabela",    text: "Apresenta os prós e os contras em formato de tabela." },
+    { label: "Passos",    text: "Divide isto num guia passo a passo." },
+    { label: "Perguntar", text: "Antes de responder, faz-me as perguntas necessárias para clarificar o meu pedido." }
   ];
 
   var PROMPTS_MOOD = [
-    { label: "Formal",   text: "Respond in a formal, professional tone." },
-    { label: "Casual",   text: "Respond in a casual, relaxed tone." },
-    { label: "Sincere",  text: "Respond in a sincere, honest, and direct tone." },
-    { label: "Friendly", text: "Respond in a warm, friendly tone." },
-    { label: "Playful",  text: "Respond in a playful, lighthearted tone." }
+    { label: "Formal",    text: "Responde num tom formal e profissional." },
+    { label: "Casual",    text: "Responde num tom casual e descontraído." },
+    { label: "Sincero",   text: "Responde num tom sincero, honesto e direto." },
+    { label: "Amigável",  text: "Responde num tom caloroso e amigável." },
+    { label: "Divertido", text: "Responde num tom leve e bem-humorado." }
   ];
 
   /* ============ THEME ============ */
   var root = document.documentElement;
   function applyTheme(t) {
     root.setAttribute("data-theme", t);
-    var lightBtn = document.getElementById("btnLight");
-    var darkBtn = document.getElementById("btnDark");
-    lightBtn.classList.toggle("active", t === "light");
-    darkBtn.classList.toggle("active", t === "dark");
+    document.getElementById("btnLight").classList.toggle("active", t === "light");
+    document.getElementById("btnDark").classList.toggle("active", t === "dark");
   }
   var lightMediaQuery = window.matchMedia ? window.matchMedia("(prefers-color-scheme: light)") : null;
   function systemTheme() {
@@ -860,7 +989,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
   document.getElementById("btnLight").addEventListener("click", function () { setThemeManually("light"); });
   document.getElementById("btnDark").addEventListener("click", function () { setThemeManually("dark"); });
 
-  /* ============ FOCUS MODE ============ */
+  /* ============ MODO FOCO ============ */
   var minimalBtn = document.getElementById("minimal-toggle");
   function applyMinimal(on) {
     document.body.classList.toggle("minimal-mode", on);
@@ -870,15 +999,16 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
   applyMinimal(safeGet("acd-minimal", "0") === "1");
   minimalBtn.addEventListener("click", function () {
     applyMinimal(!document.body.classList.contains("minimal-mode"));
+    closeSidebar();
   });
 
   /* ============ AI GRID ============ */
   var CAP_ICONS = {
-    files: '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>',
-    images: '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>',
-    web: '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="3" y1="12" x2="21" y2="12"></line><path d="M12 3a14 14 0 0 1 3.6 9 14 14 0 0 1-3.6 9 14 14 0 0 1-3.6-9A14 14 0 0 1 12 3z"></path></svg>'
+    files: "📎",
+    images: "🖼️",
+    web: "🌐"
   };
-  var CAP_LABELS = { files: "Accepts file uploads", images: "Generates images", web: "Live web access" };
+  var CAP_LABELS = { files: "Ficheiros", images: "Imagens", web: "Web" };
 
   var grid = document.getElementById("ai-grid");
   AIS.forEach(function (ai, i) {
@@ -886,10 +1016,10 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
     card.className = "ai-card";
     card.tabIndex = 0;
     card.setAttribute("role", "button");
-    card.setAttribute("aria-label", "Open " + ai.name + " (Alt+" + (i + 1) + ")");
+    card.setAttribute("aria-label", ai.name + " (Alt+" + (i + 1) + ")");
     card.style.setProperty("--accent-color", ai.accent);
     var capsHtml = (ai.caps || []).map(function (c) {
-      return '<span class="cap-icon" title="' + CAP_LABELS[c] + '">' + CAP_ICONS[c] + '</span>';
+      return '<span title="' + CAP_LABELS[c] + '">' + CAP_ICONS[c] + '</span>';
     }).join('');
     card.innerHTML =
       '<span class="keycap">Alt+' + (i + 1) + '</span>' +
@@ -904,7 +1034,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
     grid.appendChild(card);
   });
 
-  /* Kept only Alt+1 to Alt+8 shortcuts */
+  /* Atalhos Alt+1 a Alt+8 */
   document.addEventListener("keydown", function (e) {
     if (!e.altKey) return;
     var n = parseInt(e.key, 10);
@@ -914,7 +1044,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
     }
   });
 
-  /* Kept Draft shortcut '/' */
+  /* Atalho '/' para rascunho */
   document.addEventListener("keydown", function (e) {
     if (e.key !== "/") return;
     var active = document.activeElement;
@@ -924,7 +1054,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
     document.getElementById("draft").focus();
   });
 
-  /* ============ DRAFT / PROMPT LIBRARY ============ */
+  /* ============ RASCUNHO & PROMPTS ============ */
   var draft = document.getElementById("draft");
   var draftMeta = document.getElementById("draft-meta");
   draft.value = safeGet("acd-draft", "");
@@ -933,7 +1063,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
     var text = draft.value;
     var words = text.trim() ? text.trim().split(/\s+/).length : 0;
     var tokens = text.length ? Math.max(1, Math.round(text.length / 4)) : 0;
-    draftMeta.textContent = words + " words · " + text.length + " characters · ~" + tokens + " tokens";
+    draftMeta.textContent = words + " palavras · " + text.length + " caracteres · ~" + tokens + " tokens";
   }
   updateMeta();
 
@@ -961,7 +1091,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
     updateMeta();
   });
 
-  /* ============ NOTES ============ */
+  /* ============ NOTAS ============ */
   var notes = document.getElementById("notes");
   notes.value = safeGet("acd-notes", "");
   notes.addEventListener("input", function () {
@@ -972,7 +1102,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
     var btn = this;
     navigator.clipboard.writeText(notes.value).then(function () {
       var old = btn.textContent;
-      btn.textContent = "Copied";
+      btn.textContent = "Copiado";
       setTimeout(function () { btn.textContent = old; }, 1200);
     });
   });
@@ -984,7 +1114,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
     var a = document.createElement("a");
     var stamp = new Date().toISOString().slice(0, 10);
     a.href = url;
-    a.download = "notes-" + stamp + ".txt";
+    a.download = "notas-" + stamp + ".txt";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -997,7 +1127,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
     notes.focus();
   });
 
-  /* ============ CLEAN TEXT ============ */
+  /* ============ LIMPEZA DE TEXTO ============ */
   function cleanText(text) {
     text = text.replace(/[ \t]+/g, " ");
     text = text.split("\n").map(function (line) { return line.trim(); }).join("\n");
@@ -1048,11 +1178,11 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
     });
     return rebuild;
   }
-  buildPromptDropdown(document.getElementById("dd-start"), function () { return PROMPTS_CONTENT; }, "Start");
-  buildPromptDropdown(document.getElementById("dd-end"), function () { return PROMPTS_STYLE; }, "End");
-  buildPromptDropdown(document.getElementById("dd-mood"), function () { return PROMPTS_MOOD; }, "Mood");
+  buildPromptDropdown(document.getElementById("dd-start"), function () { return PROMPTS_CONTENT; }, "Início");
+  buildPromptDropdown(document.getElementById("dd-end"), function () { return PROMPTS_STYLE; }, "Fim");
+  buildPromptDropdown(document.getElementById("dd-mood"), function () { return PROMPTS_MOOD; }, "Tom");
 
-  /* ============ CUSTOM PROMPTS ============ */
+  /* ============ PROMPTS PERSONALIZADOS ============ */
   var CUSTOM_PROMPTS = [];
   try { CUSTOM_PROMPTS = JSON.parse(safeGet("acd-custom-prompts", "[]")); } catch (e) { CUSTOM_PROMPTS = []; }
 
@@ -1063,7 +1193,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
   var rebuildCustomDropdown = buildPromptDropdown(
     document.getElementById("dd-custom"),
     function () { return CUSTOM_PROMPTS; },
-    "Custom"
+    "Meus"
   );
 
   function renderManagerList(listElId, items, emptyText, onRemove) {
@@ -1084,8 +1214,8 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
       var remove = document.createElement("button");
       remove.type = "button";
       remove.className = "pm-item-remove";
-      remove.textContent = "remove";
-      remove.setAttribute("aria-label", "Remove " + item.label);
+      remove.textContent = "remover";
+      remove.setAttribute("aria-label", "Remover " + item.label);
       remove.addEventListener("click", function () { onRemove(idx); });
       row.appendChild(label);
       row.appendChild(remove);
@@ -1094,7 +1224,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
   }
 
   function renderPromptManagerList() {
-    renderManagerList("pm-list", CUSTOM_PROMPTS, "No custom prompts yet.", function (idx) {
+    renderManagerList("pm-list", CUSTOM_PROMPTS, "Sem prompts guardados.", function (idx) {
       CUSTOM_PROMPTS.splice(idx, 1);
       saveCustomPrompts();
       renderPromptManagerList();
@@ -1134,7 +1264,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
     var btn = this;
     navigator.clipboard.writeText(draft.value).then(function () {
       var old = btn.textContent;
-      btn.textContent = "Copied";
+      btn.textContent = "Copiado";
       setTimeout(function () { btn.textContent = old; }, 1200);
     });
   });
@@ -1146,7 +1276,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
     var a = document.createElement("a");
     var stamp = new Date().toISOString().slice(0, 10);
     a.href = url;
-    a.download = "draft-" + stamp + ".txt";
+    a.download = "rascunho-" + stamp + ".txt";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1160,13 +1290,13 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
     draft.focus();
   });
 
-  /* ============ REDIRECTS ============ */
+  /* ============ LIGAÇÕES ============ */
   var REDIRECTS = [
     { label: "Excalidraw", url: "https://excalidraw.com/" },
     { label: "Lovable", url: "https://lovable.dev" },
     { label: "NotebookLM", url: "https://notebooklm.google.com/" },
-    { label: "Translator", url: "https://translate.google.com/" },
-    { label: "Dase Sites", url: "https://donodaseves.github.io/dase/" }
+    { label: "Tradutor", url: "https://translate.google.com/" },
+    { label: "Sites Dase", url: "https://donodaseves.github.io/dase/" }
   ];
 
   var CUSTOM_REDIRECTS = [];
@@ -1194,10 +1324,10 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
       var remove = document.createElement("span");
       remove.className = "chip-remove";
       remove.textContent = "\u2715";
-      remove.title = "Remove";
+      remove.title = "Remover";
       remove.setAttribute("role", "button");
       remove.setAttribute("tabindex", "0");
-      remove.setAttribute("aria-label", "Remove " + r.label);
+      remove.setAttribute("aria-label", "Remover " + r.label);
       function doRemove(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -1221,8 +1351,8 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
     var addTrigger = document.createElement("button");
     addTrigger.className = "chip chip-add";
     addTrigger.type = "button";
-    addTrigger.title = "Add redirect";
-    addTrigger.setAttribute("aria-label", "Add redirect");
+    addTrigger.title = "Adicionar";
+    addTrigger.setAttribute("aria-label", "Adicionar");
     addTrigger.textContent = "+";
     addTrigger.addEventListener("click", openRedirectManager);
     redirectLinks.appendChild(addTrigger);
@@ -1230,7 +1360,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
   renderRedirects();
 
   function renderRedirectManagerList() {
-    renderManagerList("rm-list", CUSTOM_REDIRECTS, "No custom redirects yet.", function (idx) {
+    renderManagerList("rm-list", CUSTOM_REDIRECTS, "Sem ligações guardadas.", function (idx) {
       CUSTOM_REDIRECTS.splice(idx, 1);
       saveCustomRedirects();
       renderRedirects();
@@ -1264,12 +1394,12 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
     if (e.target === redirectManagerOverlay) closeRedirectManager();
   });
 
-  /* ============ COMMAND PALETTE ============ */
+  /* ============ PESQUISAR (COMMAND PALETTE) ============ */
   function buildCmdkItems() {
     return AIS.map(function (ai, i) {
       return { label: ai.name, tag: "Alt+" + (i + 1), url: ai.url };
     }).concat(REDIRECTS.concat(CUSTOM_REDIRECTS).map(function (r) {
-      return { label: r.label, tag: "Redirect", url: r.url };
+      return { label: r.label, tag: "Ligação", url: r.url };
     }));
   }
 
@@ -1283,7 +1413,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
   function renderCmdkList() {
     cmdkList.innerHTML = "";
     if (!cmdkFiltered.length) {
-      cmdkList.innerHTML = '<div class="cmdk-empty">No matches</div>';
+      cmdkList.innerHTML = '<div class="cmdk-empty">Sem resultados</div>';
       return;
     }
     cmdkFiltered.forEach(function (item, idx) {
@@ -1351,10 +1481,10 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
 
   document.getElementById("cmdk-trigger").addEventListener("click", openCmdk);
 
-  /* ============ SHORTCUTS LIST ============ */
+  /* ============ LISTA DE ATALHOS ============ */
   var SHORTCUTS = [
-    { key: "Alt+1–8", desc: "Open AI models" },
-    { key: "/", desc: "Jump to draft" }
+    { key: "Alt+1–8", desc: "Abrir modelos de IA" },
+    { key: "/", desc: "Escrever no rascunho" }
   ];
 
   var shortcutsBody = document.getElementById("shortcuts-body");
@@ -1375,7 +1505,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
     if (e.target === shortcutsOverlay) closeShortcuts();
   });
 
-  /* ============ EXPORT / IMPORT ============ */
+  /* ============ EXPORTAR / IMPORTAR ============ */
   var STORAGE_KEYS = [
     "acd-draft", "acd-notes", "acd-theme", "acd-minimal",
     "acd-custom-prompts", "acd-custom-redirects"
@@ -1392,7 +1522,7 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
     var a = document.createElement("a");
     var stamp = new Date().toISOString().slice(0, 10);
     a.href = url;
-    a.download = "dase-hub-backup-" + stamp + ".json";
+    a.download = "dase-hub-copia-" + stamp + ".json";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1418,19 +1548,20 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
           }
         });
         if (!imported) {
-          alert("That file doesn't look like a Dase Hub backup.");
+          alert("Ficheiro inválido.");
           return;
         }
-        alert("Data imported. The page will reload now.");
+        alert("Dados importados.");
         location.reload();
       } catch (e) {
-        alert("Could not read that file — make sure it's a backup exported from this app.");
+        alert("Erro ao ler o ficheiro.");
       }
     };
     reader.readAsText(file);
     importFileInput.value = "";
   });
 
+  /* ============ REPOR DADOS ============ */
   var resetConfirmOverlay = document.getElementById("reset-confirm-overlay");
   var resetConfirmInput = document.getElementById("reset-confirm-input");
   var resetConfirmBtn = document.getElementById("reset-confirm-btn");
@@ -1481,7 +1612,10 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
       }
     });
     Array.prototype.forEach.call(dropdown.querySelectorAll(".more-item"), function (item) {
-      item.addEventListener("click", close);
+      item.addEventListener("click", function () {
+        close();
+        closeSidebar();
+      });
     });
     return close;
   }
@@ -1502,9 +1636,10 @@ window.addEventListener("error", function () { acdShowErrorBanner(); });
       if (el && el.classList.contains("open")) MODAL_CLOSERS[id]();
     });
     closeSave();
+    closeSidebar();
   });
 
-  /* Initialize storage meter on load */
+  /* Inicializar barra de armazenamento */
   updateStorageVisualizer();
 
   } catch (err) {
