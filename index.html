@@ -413,16 +413,6 @@
     align-items: center;
     margin-bottom: 12px;
   }
-  .beta-tag {
-    font-size: 10px;
-    font-weight: 800;
-    background: rgba(47, 94, 255, 0.12);
-    color: var(--accent);
-    padding: 3px 8px;
-    border-radius: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
   .pin-btn {
     background: transparent;
     border: none;
@@ -636,7 +626,6 @@
         <button class="chip" onclick="setCategory('dev', this)">Dev</button>
         <button class="chip" onclick="setCategory('gaming', this)">Jogos</button>
         <button class="chip" onclick="setCategory('design', this)">Design</button>
-        <button class="chip" onclick="setCategory('finance', this)">Finanças</button>
       </div>
     </div>
 
@@ -673,16 +662,6 @@
         <a href="https://donodaseves.github.io/dase/games" target="_blank" rel="noopener noreferrer" class="btn">Abrir Games ↗</a>
       </div>
 
-      <div class="tool-card" data-category="gaming" data-id="bingo">
-        <div class="card-top-bar">
-          <button class="pin-btn" onclick="togglePin('bingo', this)" title="Favorito">★</button>
-        </div>
-        <div class="ico-box">🎯</div>
-        <h3>Dase Bingo</h3>
-        <p>Apenas um Bingo simples.</p>
-        <a href="https://donodaseves.github.io/dase/bingo" target="_blank" rel="noopener noreferrer" class="btn">Abrir Bingo ↗</a>
-      </div>
-
       <div class="tool-card" data-category="dev" data-id="tester">
         <div class="card-top-bar">
           <button class="pin-btn" onclick="togglePin('tester', this)" title="Favorito">★</button>
@@ -691,16 +670,6 @@
         <h3>Dase Tester</h3>
         <p>Ambiente de testes HTML em tempo real com pré visualização instantanea</p>
         <a href="https://donodaseves.github.io/dase/tester" target="_blank" rel="noopener noreferrer" class="btn">Abrir Tester ↗</a>
-      </div>
-
-      <div class="tool-card" data-category="productivity" data-id="tools">
-        <div class="card-top-bar">
-          <button class="pin-btn" onclick="togglePin('tools', this)" title="Favorito">★</button>
-        </div>
-        <div class="ico-box">🧰</div>
-        <h3>Dase Tools</h3>
-        <p>Coleção de utilitários rápidos e aleatorios.</p>
-        <a href="https://donodaseves.github.io/dase/tools" target="_blank" rel="noopener noreferrer" class="btn">Abrir Tools ↗</a>
       </div>
 
       <div class="tool-card" data-category="design" data-id="grid">
@@ -723,28 +692,6 @@
         <a href="https://donodaseves.github.io/dase/links" target="_blank" rel="noopener noreferrer" class="btn">Abrir Links ↗</a>
       </div>
 
-      <div class="tool-card" data-category="productivity" data-id="tracker">
-        <div class="card-top-bar">
-          <span class="beta-tag">Coming!</span>
-          <button class="pin-btn" onclick="togglePin('tracker', this)" title="Favorito">★</button>
-        </div>
-        <div class="ico-box">🔥</div>
-        <h3>Dase Tracker</h3>
-        <p>Acompanhe objetivos pessoais e registe hábitos diários de forma simples.</p>
-        <a href="https://donodaseves.github.io/dase/" target="_blank" rel="noopener noreferrer" class="btn">Abrir Tracker ↗</a>
-      </div>
-
-      <div class="tool-card" data-category="finance" data-id="capital">
-        <div class="card-top-bar">
-          <span class="beta-tag">Coming!</span>
-          <button class="pin-btn" onclick="togglePin('capital', this)" title="Favorito">★</button>
-        </div>
-        <div class="ico-box">💰</div>
-        <h3>Dase Capital</h3>
-        <p>Gerencie orçamentos e despesas pessoais.</p>
-        <a href="https://donodaseves.github.io/dase/" target="_blank" rel="noopener noreferrer" class="btn">Abrir Capital ↗</a>
-      </div>
-
       <div class="tool-card" data-category="productivity" data-id="text">
         <div class="card-top-bar">
           <button class="pin-btn" onclick="togglePin('text', this)" title="Favorito">★</button>
@@ -764,7 +711,7 @@
     <!-- Painel de Estatísticas -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="val" id="statCount">10</div>
+        <div class="val" id="statCount">7</div>
         <div class="lbl">Ferramentas Ativas</div>
       </div>
       <div class="stat-card">
